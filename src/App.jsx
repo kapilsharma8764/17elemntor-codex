@@ -768,8 +768,7 @@ function App() {
           {leftOpen && <LeftSidebar state={state} dispatch={dispatch} />}
           {leftOpen && <ResizeHandle side="left" onMouseDown={(event) => startResize('left', event)} />}
         </div>
-        <main className="min-w-0 overflow-hidden bg-slate-200/70 p-4">
-          <Breadcrumb page={page} selectedId={state.selectedId} dispatch={dispatch} />
+        <main className="min-w-0 overflow-hidden bg-slate-200/70">
           <Canvas state={state} page={page} dispatch={dispatch} zoom={zoom} />
         </main>
         <div className={clsx('relative min-w-0 overflow-hidden', !rightOpen && 'border-l border-slate-200 bg-white')}>
@@ -1017,7 +1016,7 @@ function Canvas({ state, page, dispatch, zoom }) {
   return (
     <div
       ref={viewportRef}
-      className={clsx('editor-scrollbar h-[calc(100vh-130px)] overflow-auto rounded-lg border border-slate-300 bg-slate-300/70 p-4', panning && 'cursor-grabbing')}
+      className={clsx('editor-scrollbar h-[calc(100vh-64px)] overflow-auto bg-slate-200/70', panning && 'cursor-grabbing')}
       onMouseDown={startPan}
       onMouseMove={movePan}
       onMouseUp={() => setPanning(null)}
@@ -1357,20 +1356,6 @@ function applyAiOperations(ops, state, dispatch) {
     if (op.action === 'UPDATE_RESPONSIVE_STYLE') dispatch({ type: 'UPDATE_NODE', id: op.targetId, responsiveStyles: { ...findNode(getCurrentPage(state.website, state.currentPageId).nodes, op.targetId)?.node.responsiveStyles, ...op.responsiveStyles } })
     if (op.action === 'UPDATE_ALL_OF_TYPE') dispatch({ type: 'UPDATE_ALL_OF_TYPE', widgetType: op.type, styles: op.styles })
   })
-}
-
-function Breadcrumb({ page, selectedId, dispatch }) {
-  const path = []
-  function walk(nodes, trail) {
-    for (const node of nodes) {
-      const next = [...trail, node]
-      if (node.id === selectedId) { path.push(...next); return true }
-      if (walk(node.children || [], next)) return true
-    }
-    return false
-  }
-  if (selectedId) walk(page.nodes, [])
-  return <div className="mb-3 flex items-center gap-1 text-xs font-semibold text-slate-500"><span>{page.name}</span>{path.map((node) => <button key={node.id} className="rounded px-1 hover:bg-white hover:text-blue-700" onClick={() => dispatch({ type: 'SELECT', id: node.id, skipHistory: true })}>/ {node.props.name || widgetRegistry[node.type].name}</button>)}</div>
 }
 
 function Preview({ state, page, dispatch }) {
