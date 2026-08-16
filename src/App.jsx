@@ -702,8 +702,8 @@ function App() {
   const [commandOpen, setCommandOpen] = useState(false)
   const [leftOpen, setLeftOpen] = useState(true)
   const [rightOpen, setRightOpen] = useState(true)
-  const [leftWidth, setLeftWidth] = useState(380)
-  const [rightWidth, setRightWidth] = useState(380)
+  const [leftWidth, setLeftWidth] = useState(340)
+  const [rightWidth, setRightWidth] = useState(340)
   const [zoom, setZoom] = useState('fit')
   const page = getCurrentPage(state.website, state.currentPageId)
   const selected = state.selectedId ? findNode(page.nodes, state.selectedId)?.node : null
@@ -711,7 +711,7 @@ function App() {
   const startResize = (side, event) => {
     event.preventDefault()
     const onMove = (moveEvent) => {
-      if (side === 'left') setLeftWidth(Math.min(520, Math.max(280, moveEvent.clientX)))
+      if (side === 'left') setLeftWidth(Math.min(500, Math.max(280, moveEvent.clientX)))
       if (side === 'right') setRightWidth(Math.min(520, Math.max(300, window.innerWidth - moveEvent.clientX)))
     }
     const onUp = () => {
@@ -762,13 +762,13 @@ function App() {
       />
       <div
         className="grid h-[calc(100vh-64px)]"
-        style={{ gridTemplateColumns: `${leftOpen ? leftWidth : 0}px minmax(520px,1fr) ${rightOpen ? rightWidth : 0}px` }}
+        style={{ gridTemplateColumns: `${leftOpen ? leftWidth : 0}px minmax(480px,1fr) ${rightOpen ? rightWidth : 0}px` }}
       >
         <div className={clsx('relative min-w-0 overflow-hidden', !leftOpen && 'border-r border-slate-200 bg-white')}>
           {leftOpen && <LeftSidebar state={state} dispatch={dispatch} />}
           {leftOpen && <ResizeHandle side="left" onMouseDown={(event) => startResize('left', event)} />}
         </div>
-        <main className="min-w-0 overflow-hidden bg-slate-200/70 p-6">
+        <main className="min-w-0 overflow-hidden bg-slate-200/70 p-4">
           <Breadcrumb page={page} selectedId={state.selectedId} dispatch={dispatch} />
           <Canvas state={state} page={page} dispatch={dispatch} zoom={zoom} />
         </main>
@@ -811,7 +811,6 @@ function Toolbar({ state, dispatch, onCommand, leftOpen, rightOpen, setLeftOpen,
         <IconButton title="Command palette" onClick={onCommand}><Search size={17} /></IconButton>
       </div>
       <div className="flex items-center gap-2">
-        <button className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50" onClick={() => dispatch({ type: 'ADD_PAGE', name: 'New Page' })}><FilePlus size={16} /> Add Page</button>
         <button className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50" onClick={() => dispatch({ type: 'TOGGLE_PREVIEW', skipHistory: true })}><Eye size={16} /> Preview</button>
         <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700" onClick={() => dispatch({ type: 'SAVE', skipHistory: true })}><Save size={16} /> Save</button>
         <button className="rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-500">Publish</button>
@@ -838,8 +837,8 @@ function LeftSidebar({ state, dispatch }) {
   const tabs = [['pages', PanelLeft], ['widgets', Plus], ['sections', LayoutTemplate], ['templates', Sparkles], ['components', Copy], ['styles', Paintbrush], ['import', Upload]]
   return (
     <aside className="editor-scrollbar h-full overflow-y-auto border-r border-slate-200 bg-white">
-      <div className="sticky top-0 z-30 grid grid-cols-4 gap-2 border-b border-slate-200 bg-white p-3 shadow-sm">
-        {tabs.map(([tab, Icon]) => <button key={tab} title={tab} className={clsx('rounded-md p-2 text-xs font-bold capitalize text-slate-600 hover:bg-slate-50', state.leftPanel === tab && 'bg-blue-50 text-blue-700')} onClick={() => dispatch({ type: 'SET_PANEL', panel: tab, skipHistory: true })}><Icon size={16} className="mx-auto mb-1" />{tab}</button>)}
+      <div className="sticky top-0 z-30 grid grid-cols-3 gap-2 border-b border-slate-200 bg-white p-3 shadow-sm">
+        {tabs.map(([tab, Icon]) => <button key={tab} title={tab} className={clsx('min-w-0 rounded-md p-2 text-[11px] font-bold capitalize text-slate-600 hover:bg-slate-50', state.leftPanel === tab && 'bg-blue-50 text-blue-700')} onClick={() => dispatch({ type: 'SET_PANEL', panel: tab, skipHistory: true })}><Icon size={16} className="mx-auto mb-1" /><span className="block truncate">{tab}</span></button>)}
       </div>
       {state.leftPanel === 'pages' && <PagesPanel state={state} dispatch={dispatch} />}
       {state.leftPanel === 'widgets' && <WidgetPanel />}
@@ -1018,17 +1017,12 @@ function Canvas({ state, page, dispatch, zoom }) {
   return (
     <div
       ref={viewportRef}
-      className={clsx('editor-scrollbar h-[calc(100vh-158px)] overflow-auto rounded-lg border border-slate-300 bg-slate-300/70 p-6', panning && 'cursor-grabbing')}
+      className={clsx('editor-scrollbar h-[calc(100vh-130px)] overflow-auto rounded-lg border border-slate-300 bg-slate-300/70 p-4', panning && 'cursor-grabbing')}
       onMouseDown={startPan}
       onMouseMove={movePan}
       onMouseUp={() => setPanning(null)}
       onMouseLeave={() => setPanning(null)}
     >
-      <div className="sticky left-0 top-0 z-30 mb-3 flex max-w-fit items-center gap-2 rounded-md bg-white/90 px-3 py-1 text-xs font-bold text-slate-600 shadow">
-        <span>Scroll canvas to edit. Alt + drag pans.</span>
-        <button className="rounded bg-blue-600 px-2 py-1 text-white" onClick={() => dispatch({ type: 'ADD_PAGE', name: 'New Page' })}>+ Page</button>
-        <button className="rounded border border-blue-200 px-2 py-1 text-blue-700" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template: 'SaaS' })}>Template</button>
-      </div>
       <div className="mx-auto transition-all" style={{ width: scaledWidth, height: pageHeight * scale }}>
         <div
           className="origin-top-left overflow-visible"
@@ -1199,8 +1193,6 @@ function ElementShell({ node, selected, dispatch, children }) {
       {selected && (
         <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-md border border-blue-200 bg-white/95 px-2 py-1 text-xs font-bold text-blue-700 shadow">
           <span className="max-w-24 truncate">{widgetRegistry[node.type].name}</span>
-          <button className="rounded p-1 hover:bg-blue-50" title="Add Page" onClick={() => dispatch({ type: 'ADD_PAGE', name: 'New Page' })}><FilePlus size={13} /></button>
-          <button className="rounded p-1 hover:bg-blue-50" title="Apply SaaS template to current page" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template: 'SaaS' })}><LayoutTemplate size={13} /></button>
           <button className="rounded p-1 hover:bg-blue-50" title="Duplicate" onClick={() => dispatch({ type: 'DUPLICATE_NODE', id: node.id })}><Copy size={13} /></button>
           <button className="rounded p-1 hover:bg-blue-50" title="Copy style" onClick={() => dispatch({ type: 'COPY_STYLE', id: node.id, skipHistory: true })}><Paintbrush size={13} /></button>
           <button className="rounded p-1 hover:bg-blue-50" title="Save component" onClick={() => dispatch({ type: 'SAVE_COMPONENT', id: node.id })}><Save size={13} /></button>
