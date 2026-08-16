@@ -28,11 +28,19 @@ select {
 }
 
 .editor-scrollbar::-webkit-scrollbar {
-  height: 10px;
-  width: 10px;
+  height: 8px;
+  width: 8px;
+}
+
+.editor-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .editor-scrollbar::-webkit-scrollbar-thumb {
-  background: #c7d2fe;
+  background: #d7dee8;
   border-radius: 999px;
+}
+
+.editor-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #b8c2d0;
 }

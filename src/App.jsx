@@ -768,7 +768,7 @@ function App() {
           {leftOpen && <LeftSidebar state={state} dispatch={dispatch} />}
           {leftOpen && <ResizeHandle side="left" onMouseDown={(event) => startResize('left', event)} />}
         </div>
-        <main className="min-w-0 overflow-hidden bg-slate-200/70">
+        <main className="min-w-0 overflow-hidden bg-white">
           <Canvas state={state} page={page} dispatch={dispatch} zoom={zoom} />
         </main>
         <div className={clsx('relative min-w-0 overflow-hidden', !rightOpen && 'border-l border-slate-200 bg-white')}>
@@ -977,7 +977,7 @@ function Canvas({ state, page, dispatch, zoom }) {
   const [pageHeight, setPageHeight] = useState(900)
   const [panning, setPanning] = useState(null)
   const baseWidth = devices[state.device]
-  const fitScale = Math.min(1, Math.max(0.35, (viewportWidth - 48) / baseWidth))
+  const fitScale = Math.min(1.25, Math.max(0.35, viewportWidth / baseWidth))
   const scale = zoom === 'fit' ? fitScale : zoom
   const scaledWidth = baseWidth * scale
 
@@ -1016,13 +1016,13 @@ function Canvas({ state, page, dispatch, zoom }) {
   return (
     <div
       ref={viewportRef}
-      className={clsx('editor-scrollbar h-[calc(100vh-64px)] overflow-auto bg-slate-200/70', panning && 'cursor-grabbing')}
+      className={clsx('editor-scrollbar h-[calc(100vh-64px)] overflow-auto bg-white', panning && 'cursor-grabbing')}
       onMouseDown={startPan}
       onMouseMove={movePan}
       onMouseUp={() => setPanning(null)}
       onMouseLeave={() => setPanning(null)}
     >
-      <div className="mx-auto transition-all" style={{ width: scaledWidth, height: pageHeight * scale }}>
+      <div className="transition-all" style={{ width: scaledWidth, height: pageHeight * scale }}>
         <div
           className="origin-top-left overflow-visible"
           style={{ width: baseWidth, transform: `scale(${scale})`, transformOrigin: 'top left' }}
