@@ -402,6 +402,16 @@ function findNode(nodes, id, parentId = 'root') {
   return null
 }
 
+function findNodeLocation(nodes, id, parentId = 'root') {
+  for (let index = 0; index < nodes.length; index += 1) {
+    const node = nodes[index]
+    if (node.id === id) return { node, parentId, index }
+    const found = findNodeLocation(node.children || [], id, node.id)
+    if (found) return found
+  }
+  return null
+}
+
 function mapNodes(nodes, id, updater) {
   return nodes.map((node) => {
     if (node.id === id) return updater(node)
@@ -524,6 +534,24 @@ function editorReducer(state, action) {
         selectedId: node.id,
         notice: `${widgetRegistry[node.type].name} added`,
         website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: insertNode(p.nodes, parentId, node, action.index) })),
+      }
+    }
+    case 'ADD_BLANK_AFTER': {
+      const location = findNodeLocation(page.nodes, action.id)
+      if (!location) return state
+      const newNodeType = location.parentId === 'root' ? 'section' : 'container'
+      if (!canDrop(page.nodes, location.parentId, newNodeType)) return { ...state, notice: 'Cannot add a blank block here.' }
+      const blankNode = makeNode(newNodeType, {
+        props: { name: newNodeType === 'section' ? 'Blank Section' : 'Blank Container' },
+        styles: newNodeType === 'section'
+          ? { padding: '48px 32px', background: '#ffffff', minHeight: '220px' }
+          : { padding: '24px', background: '#ffffff', minHeight: '160px', border: '1px dashed #bfdbfe' },
+      })
+      return {
+        ...state,
+        selectedId: blankNode.id,
+        notice: `${widgetRegistry[blankNode.type].name} added`,
+        website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: insertNode(p.nodes, location.parentId, blankNode, location.index + 1) })),
       }
     }
     case 'MOVE_NODE': {
@@ -1189,7 +1217,7 @@ function EditableTag({ tag, node, common, dispatch, prop }) {
 function ElementShell({ node, selected, dispatch, children }) {
   return (
     <div className="group relative">
-      {selected && (
+      {selected && widgetRegistry[node.type].container && (
         <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-md border border-blue-200 bg-white/95 px-2 py-1 text-xs font-bold text-blue-700 shadow">
           <span className="max-w-24 truncate">{widgetRegistry[node.type].name}</span>
           <button className="rounded p-1 hover:bg-blue-50" title="Duplicate" onClick={() => dispatch({ type: 'DUPLICATE_NODE', id: node.id })}><Copy size={13} /></button>
@@ -1199,6 +1227,18 @@ function ElementShell({ node, selected, dispatch, children }) {
         </div>
       )}
       {children}
+      {selected && (
+        <button
+          className="absolute bottom-0 left-1/2 z-20 -translate-x-1/2 translate-y-1/2 rounded-full border border-blue-200 bg-blue-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:bg-blue-700"
+          title="Add a blank editable section below"
+          onClick={(event) => {
+            event.stopPropagation()
+            dispatch({ type: 'ADD_BLANK_AFTER', id: node.id })
+          }}
+        >
+          + Add Section
+        </button>
+      )}
     </div>
   )
 }
