@@ -240,7 +240,13 @@ const widgetRegistry = {
 
 const widgetAliases = [
   ['Hero', 'Marketing', Sparkles, 'quick:hero'],
+  ['Hotel Hero', 'Marketing', Sparkles, 'quick:hotelHero'],
   ['Features', 'Marketing', LayoutTemplate, 'quick:features'],
+  ['Rooms', 'Content', LayoutTemplate, 'quick:rooms'],
+  ['Dining', 'Content', LayoutTemplate, 'quick:dining'],
+  ['Amenities', 'Content', LayoutTemplate, 'quick:amenities'],
+  ['Gallery', 'Media', LayoutTemplate, 'quick:gallery'],
+  ['Booking', 'Forms', LayoutTemplate, 'quick:booking'],
   ['Pricing', 'Marketing', LayoutTemplate, 'quick:pricing'],
   ['CTA', 'Marketing', Sparkles, 'quick:cta'],
   ['Testimonials', 'Content', LayoutTemplate, 'quick:testimonials'],
@@ -354,10 +360,97 @@ function contactSection() {
   ])
 }
 
+function hotelHeader() {
+  return makeNode('header', { props: { name: 'Hotel Header' }, styles: { padding: '18px 32px', background: '#ffffff', borderBottom: '1px solid #e2e8f0' } }, [
+    makeNode('flex', { props: { name: 'Hotel Navigation' }, styles: { maxWidth: '1180px', margin: '0 auto', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' } }, [
+      makeNode('heading', { props: { text: 'Azure Table & Stay', tag: 'h3', name: 'Brand' }, styles: { fontSize: '24px', margin: '0', color: '#132238' } }),
+      makeNode('paragraph', { props: { text: 'Rooms   Dining   Events   Contact', name: 'Menu' }, styles: { fontSize: '15px', color: '#475569', margin: '0 auto', whiteSpace: 'nowrap' } }),
+      makeNode('button', { props: { text: 'Reserve Now', name: 'Reserve Button' }, styles: { background: '#b45309', borderRadius: '999px', padding: '11px 18px' } }),
+    ]),
+  ])
+}
+
+function hotelHero() {
+  return makeNode('section', { props: { name: 'Hotel Hero' }, styles: { padding: '82px 32px', background: '#fff7ed' } }, [
+    makeNode('grid', { props: { name: 'Hero Grid' }, styles: { maxWidth: '1180px', margin: '0 auto', gap: '44px', alignItems: 'center' }, responsiveStyles: { desktop: { gridTemplateColumns: '1fr 1fr' }, tablet: { gridTemplateColumns: '1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+      makeNode('container', { props: { name: 'Hero Copy' }, styles: { padding: '0', display: 'grid', gap: '18px' } }, [
+        makeNode('paragraph', { props: { text: 'Restaurant + Boutique Hotel' }, styles: { color: '#b45309', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', fontSize: '14px' } }),
+        makeNode('heading', { props: { text: 'A warm stay with unforgettable dining', tag: 'h1' }, styles: { fontSize: '54px', color: '#132238', lineHeight: '1.02' }, responsiveStyles: { tablet: { fontSize: '42px' }, mobile: { fontSize: '34px', textAlign: 'center' } } }),
+        makeNode('paragraph', { props: { text: 'Create a refined hotel website with rooms, dining, booking, amenities, and contact sections. Every element stays editable.' }, styles: { fontSize: '18px', color: '#475569' } }),
+        makeNode('button', { props: { text: 'Book a Table or Room' }, styles: { background: '#b45309', borderRadius: '999px', padding: '15px 24px' } }),
+      ]),
+      makeNode('image', { props: { src: 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?auto=format&fit=crop&w=1100&q=80', alt: 'Boutique hotel lounge' }, styles: { width: '100%', maxWidth: '540px', height: '380px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 20px 45px rgba(15, 23, 42, .18)' } }),
+    ]),
+  ])
+}
+
+function roomsSection() {
+  return cardsSection('Rooms', 'Stay in comfort', ['Deluxe Room', 'Garden Suite', 'Family Stay'])
+}
+
+function diningSection() {
+  return cardsSection('Dining', 'Signature menu highlights', ['Seasonal Breakfast', 'Chef Dinner', 'Private Dining'])
+}
+
+function amenitiesSection() {
+  return cardsSection('Amenities', 'Everything for a relaxed visit', ['Spa Access', 'Event Hall', 'Concierge'])
+}
+
+function gallerySection() {
+  return makeNode('section', { props: { name: 'Gallery' }, styles: { padding: '72px 32px', background: '#f8fafc' } }, [
+    makeNode('container', { props: { name: 'Gallery Container' }, styles: { maxWidth: '1180px', padding: '0', display: 'grid', gap: '28px' } }, [
+      makeNode('heading', { props: { text: 'A closer look inside', tag: 'h2' }, styles: { fontSize: '42px', textAlign: 'center' } }),
+      makeNode('grid', { props: { name: 'Gallery Grid' }, responsiveStyles: { desktop: { gridTemplateColumns: 'repeat(3, 1fr)' }, tablet: { gridTemplateColumns: 'repeat(2, 1fr)' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+        makeNode('image', { props: { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80', alt: 'Hotel exterior' }, styles: { height: '240px', maxWidth: '100%' } }),
+        makeNode('image', { props: { src: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=80', alt: 'Restaurant table' }, styles: { height: '240px', maxWidth: '100%' } }),
+        makeNode('image', { props: { src: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=900&q=80', alt: 'Guest room' }, styles: { height: '240px', maxWidth: '100%' } }),
+      ]),
+    ]),
+  ])
+}
+
+function bookingSection() {
+  return makeNode('section', { props: { name: 'Booking' }, styles: { padding: '76px 32px', background: '#ffffff' } }, [
+    makeNode('grid', { props: { name: 'Booking Layout' }, styles: { maxWidth: '1120px', margin: '0 auto', gap: '32px' }, responsiveStyles: { desktop: { gridTemplateColumns: '1fr 1fr' }, tablet: { gridTemplateColumns: '1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+      makeNode('container', { props: { name: 'Booking Copy' }, styles: { display: 'grid', gap: '16px' } }, [
+        makeNode('heading', { props: { text: 'Reserve your table or room', tag: 'h2' }, styles: { fontSize: '40px' } }),
+        makeNode('paragraph', { props: { text: 'Use this editable booking section for restaurant reservations, room inquiries, events, and private dining.' } }),
+      ]),
+      makeNode('form', {}, [
+        makeNode('input', { props: { placeholder: 'Full name' } }),
+        makeNode('input', { props: { placeholder: 'Email or phone' } }),
+        makeNode('input', { props: { placeholder: 'Date and time' } }),
+        makeNode('textarea', { props: { placeholder: 'Room, table, or event details' } }),
+        makeNode('button', { props: { text: 'Send Reservation Request' }, styles: { background: '#b45309' } }),
+      ]),
+    ]),
+  ])
+}
+
+function hotelFooter() {
+  return makeNode('footer', { styles: { background: '#132238', padding: '46px 32px', color: '#ffffff' } }, [
+    makeNode('grid', { props: { name: 'Hotel Footer Layout' }, styles: { maxWidth: '1180px', margin: '0 auto', gap: '28px' }, responsiveStyles: { desktop: { gridTemplateColumns: '2fr 1fr 1fr' }, tablet: { gridTemplateColumns: '1fr 1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+      makeNode('container', { props: { name: 'Footer Brand' }, styles: { padding: '0', display: 'grid', gap: '12px' } }, [
+        makeNode('heading', { props: { text: 'Azure Table & Stay', tag: 'h3' }, styles: { color: '#ffffff', fontSize: '24px' } }),
+        makeNode('paragraph', { props: { text: 'Restaurant, rooms, events, and warm hospitality in one editable website.' }, styles: { color: '#cbd5e1' } }),
+      ]),
+      makeNode('paragraph', { props: { text: 'Rooms\nDining\nEvents\nReservations' }, styles: { color: '#cbd5e1', whiteSpace: 'pre-line' } }),
+      makeNode('paragraph', { props: { text: 'hello@example.com\n+1 555 0188\nOpen daily' }, styles: { color: '#cbd5e1', whiteSpace: 'pre-line' } }),
+    ]),
+  ])
+}
+
 function quickSection(kind) {
   const sections = {
     header: headerSection,
     hero: () => heroSection('Create a beautiful website without writing code'),
+    hotelHeader,
+    hotelHero,
+    rooms: roomsSection,
+    dining: diningSection,
+    amenities: amenitiesSection,
+    gallery: gallerySection,
+    booking: bookingSection,
     features: () => cardsSection('Features', 'Features your visitors will notice'),
     services: () => cardsSection('Services', 'Services built around your goals', ['Strategy', 'Design', 'Growth']),
     pricing: () => cardsSection('Pricing', 'Simple packages for every stage', ['Starter', 'Growth', 'Scale']),
@@ -367,8 +460,37 @@ function quickSection(kind) {
     cta: ctaSection,
     contact: contactSection,
     footer: footerSection,
+    hotelFooter,
   }
   return sections[kind]?.() || heroSection()
+}
+
+function hotelPageNodes(pageName = 'Home') {
+  const pages = {
+    Home: [hotelHeader(), hotelHero(), roomsSection(), diningSection(), amenitiesSection(), gallerySection(), bookingSection(), hotelFooter()],
+    Rooms: [hotelHeader(), heroSection('Rooms designed for comfort'), roomsSection(), amenitiesSection(), bookingSection(), hotelFooter()],
+    Dining: [hotelHeader(), heroSection('Seasonal dining and private tables'), diningSection(), gallerySection(), bookingSection(), hotelFooter()],
+    Events: [hotelHeader(), heroSection('Host memorable events with ease'), cardsSection('Events', 'Spaces for every gathering', ['Weddings', 'Private Dining', 'Corporate Events']), bookingSection(), hotelFooter()],
+    Contact: [hotelHeader(), heroSection('Plan your visit'), bookingSection(), contactSection(), hotelFooter()],
+  }
+  return pages[pageName] || [hotelHeader(), heroSection(`Build ${pageName}`), bookingSection(), hotelFooter()]
+}
+
+function hotelWebsite() {
+  const pages = ['Home', 'Rooms', 'Dining', 'Events', 'Contact'].map((name) => makePage(name, hotelPageNodes(name)))
+  return {
+    id: uid('site'),
+    schemaVersion: 5,
+    name: 'Azure Table & Stay',
+    homePageId: pages[0].id,
+    globalStyles: {
+      ...baseTheme,
+      colors: { primary: '#b45309', secondary: '#132238', accent: '#f59e0b', text: '#132238', background: '#ffffff' },
+    },
+    reusableComponents: [],
+    pages,
+    preferences: { mode: 'simple' },
+  }
 }
 
 function makePage(name, nodes = []) {
@@ -378,7 +500,7 @@ function makePage(name, nodes = []) {
 function defaultWebsite() {
   return {
     id: uid('site'),
-    schemaVersion: 4,
+    schemaVersion: 5,
     name: 'My Website',
     homePageId: null,
     globalStyles: baseTheme,
@@ -506,7 +628,9 @@ function editorReducer(state, action) {
     case 'RENAME_SITE':
       return { ...state, website: { ...state.website, name: action.name } }
     case 'ADD_PAGE': {
-      const nextPage = makePage(action.name || 'New Page', [headerSection(), heroSection('Start building this page'), footerSection()])
+      const pageName = action.name || 'New Page'
+      const nodes = action.template === 'Hotel' ? hotelPageNodes(pageName) : [headerSection(), heroSection('Start building this page'), footerSection()]
+      const nextPage = makePage(pageName, nodes)
       return { ...state, currentPageId: nextPage.id, selectedId: null, website: { ...state.website, pages: [...state.website.pages, nextPage] } }
     }
     case 'OPEN_PAGE':
@@ -539,6 +663,16 @@ function editorReducer(state, action) {
     case 'ADD_BLANK_AFTER': {
       const location = findNodeLocation(page.nodes, action.id)
       if (!location) return state
+      if (action.node) {
+        const targetParentId = canDrop(page.nodes, location.parentId, action.node.type) ? location.parentId : 'root'
+        const targetIndex = targetParentId === location.parentId ? location.index + 1 : null
+        return {
+          ...state,
+          selectedId: action.node.id,
+          notice: `${widgetRegistry[action.node.type].name} added`,
+          website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: insertNode(p.nodes, targetParentId, action.node, targetIndex) })),
+        }
+      }
       const requestedType = action.widgetType || (location.parentId === 'root' ? 'section' : 'container')
       const newNodeType = location.parentId === 'root' && !widgetRegistry[requestedType].allowedParents.includes('root') ? 'section' : requestedType
       if (!canDrop(page.nodes, location.parentId, newNodeType)) return { ...state, notice: 'Cannot add a blank block here.' }
@@ -599,6 +733,10 @@ function editorReducer(state, action) {
       return { ...state, website: { ...state.website, globalStyles: { ...state.website.globalStyles, [action.group]: { ...state.website.globalStyles[action.group], [action.key]: action.value } } } }
     case 'LOAD_TEMPLATE':
       return { ...state, website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: templateNodes(action.template) })), selectedId: null }
+    case 'LOAD_WEBSITE_TEMPLATE': {
+      const website = action.template === 'Restaurant Hotel' ? hotelWebsite() : state.website
+      return { ...state, website, currentPageId: website.pages[0].id, selectedId: null }
+    }
     case 'IMPORT_NODES':
       return {
         ...state,
@@ -619,6 +757,7 @@ function updateAllOfType(nodes, type, styles) {
 }
 
 function templateNodes(template) {
+  if (template === 'Restaurant Hotel') return hotelPageNodes('Home')
   if (template === 'Restaurant') return [headerSection(), heroSection('Fresh flavors, memorable evenings'), cardsSection('Menu Highlights', 'Popular dishes', ['Seasonal Plates', 'Private Dining', 'Catering']), contactSection(), footerSection()]
   if (template === 'Portfolio') return [headerSection(), heroSection('Designer portfolio for standout work'), cardsSection('Selected Work', 'Projects with purpose', ['Brand System', 'Web Experience', 'Product UI']), ctaSection(), footerSection()]
   return [headerSection(), heroSection(`Modern ${template} website`), cardsSection('Features', 'Built for conversion'), cardsSection('Pricing', 'Choose your package', ['Launch', 'Grow', 'Scale']), ctaSection(), footerSection()]
@@ -721,7 +860,7 @@ const reduce = historyWrap(editorReducer)
 function initialState() {
   const loaded = localStorage.getItem(STORAGE_KEY)
   const parsed = loaded ? JSON.parse(loaded) : null
-  const website = parsed?.schemaVersion >= 4 ? parsed : defaultWebsite()
+  const website = parsed?.schemaVersion >= 5 ? parsed : defaultWebsite()
   if (!website.homePageId) website.homePageId = website.pages[0].id
   return {
     website,
@@ -901,6 +1040,11 @@ function PagesPanel({ state, dispatch }) {
           <input className="min-w-0 flex-1 rounded-md border border-blue-200 px-3 py-2 text-sm" placeholder="Page name, e.g. Gallery" value={name} onChange={(e) => setName(e.target.value)} />
           <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-bold text-white" onClick={() => { dispatch({ type: 'ADD_PAGE', name: name || 'New Page' }); setName('') }}><FilePlus size={16} /> Add</button>
         </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {['Rooms', 'Dining', 'Events', 'Contact'].map((pageName) => (
+            <button key={pageName} className="rounded-md border border-blue-200 bg-white px-2 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100" onClick={() => dispatch({ type: 'ADD_PAGE', name: pageName, template: 'Hotel' })}>{pageName} Page</button>
+          ))}
+        </div>
       </div>
       <div className="space-y-2">
         {state.website.pages.map((page, index) => (
@@ -985,8 +1129,13 @@ function QuickSections() {
 }
 
 function TemplatesPanel({ dispatch }) {
-  const templates = ['SaaS', 'Agency', 'Restaurant', 'Portfolio', 'Business', 'Blog', 'E-commerce', 'Landing Page']
-  return <Panel title="Templates"><div className="space-y-2">{templates.map((template) => <button key={template} className="w-full rounded-md border border-slate-200 p-3 text-left text-sm font-semibold hover:border-blue-400 hover:bg-blue-50" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template })}>{template}</button>)}</div></Panel>
+  const templates = ['Restaurant Hotel', 'SaaS', 'Agency', 'Restaurant', 'Portfolio', 'Business', 'Blog', 'E-commerce', 'Landing Page']
+  return (
+    <Panel title="Templates">
+      <button className="mb-3 w-full rounded-md bg-amber-700 p-3 text-left text-sm font-extrabold text-white hover:bg-amber-800" onClick={() => dispatch({ type: 'LOAD_WEBSITE_TEMPLATE', template: 'Restaurant Hotel' })}>Build Full Restaurant/Hotel Website</button>
+      <div className="space-y-2">{templates.map((template) => <button key={template} className="w-full rounded-md border border-slate-200 p-3 text-left text-sm font-semibold hover:border-blue-400 hover:bg-blue-50" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template })}>{template}</button>)}</div>
+    </Panel>
+  )
 }
 
 function ComponentsPanel({ state }) {
@@ -1225,11 +1374,16 @@ function EditableTag({ tag, node, common, dispatch, prop }) {
 function ElementShell({ node, selected, dispatch, children }) {
   const [addOpen, setAddOpen] = useState(false)
   const addOptions = [
-    ['Section', 'section', {}],
-    ['Container', 'container', {}],
-    ['Grid', 'grid', {}],
-    ['Flex Horizontal', 'flex', { flexDirection: 'row' }],
-    ['Flex Vertical', 'flex', { flexDirection: 'column', alignItems: 'stretch' }],
+    ['Blank Section', { widgetType: 'section' }],
+    ['Container', { widgetType: 'container' }],
+    ['Grid', { widgetType: 'grid' }],
+    ['Flex Horizontal', { widgetType: 'flex', styles: { flexDirection: 'row' } }],
+    ['Flex Vertical', { widgetType: 'flex', styles: { flexDirection: 'column', alignItems: 'stretch' } }],
+    ['Hotel Hero', { node: hotelHero() }],
+    ['Rooms Section', { node: roomsSection() }],
+    ['Dining Section', { node: diningSection() }],
+    ['Gallery Section', { node: gallerySection() }],
+    ['Booking Section', { node: bookingSection() }],
   ]
   return (
     <div className="group relative">
@@ -1254,12 +1408,12 @@ function ElementShell({ node, selected, dispatch, children }) {
           </button>
           {addOpen && (
             <div className="absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 overflow-hidden rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-editor">
-              {addOptions.map(([label, widgetType, styles]) => (
+              {addOptions.map(([label, config]) => (
                 <button
                   key={label}
                   className="block w-full px-3 py-2 text-left hover:bg-blue-50 hover:text-blue-700"
                   onClick={() => {
-                    dispatch({ type: 'ADD_BLANK_AFTER', id: node.id, widgetType, styles })
+                    dispatch({ type: 'ADD_BLANK_AFTER', id: node.id, ...config })
                     setAddOpen(false)
                   }}
                 >
