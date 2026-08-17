@@ -4,6 +4,8 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  ArrowDown,
+  ArrowUp,
   Bot,
   Box,
   Braces,
@@ -11,8 +13,10 @@ import {
   ChevronDown,
   Columns3,
   Copy,
+  Download,
   Eye,
   FilePlus,
+  FolderOpen,
   GripVertical,
   Image,
   LayoutGrid,
@@ -282,6 +286,17 @@ function cloneNode(node) {
   }
 }
 
+function cloneNodeClean(node) {
+  return {
+    ...structuredClone(node),
+    id: uid(node.type),
+    props: { ...node.props },
+    styles: { ...node.styles },
+    responsiveStyles: structuredClone(node.responsiveStyles || {}),
+    children: (node.children || []).map(cloneNodeClean),
+  }
+}
+
 function headerSection() {
   return makeNode('header', { props: { name: 'Header' } }, [
     makeNode('flex', { props: { name: 'Navigation Bar' }, styles: { maxWidth: '1120px', margin: '0 auto', padding: '0', gap: '22px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' } }, [
@@ -488,6 +503,7 @@ function hotelWebsite() {
       colors: { primary: '#b45309', secondary: '#132238', accent: '#f59e0b', text: '#132238', background: '#ffffff' },
     },
     reusableComponents: [],
+    mediaLibrary: [],
     pages,
     preferences: { mode: 'simple' },
   }
@@ -505,6 +521,7 @@ function defaultWebsite() {
     homePageId: null,
     globalStyles: baseTheme,
     reusableComponents: [],
+    mediaLibrary: [],
     pages: [
       makePage('Home', [headerSection(), heroSection(), cardsSection(), ctaSection(), footerSection()]),
       makePage('About', [headerSection(), heroSection('A small team helping brands move faster'), cardsSection('Team', 'People behind the work', ['Strategy Lead', 'Designer', 'Builder']), ctaSection(), footerSection()]),
@@ -575,6 +592,19 @@ function insertNode(nodes, parentId, node, index = null) {
   })
 }
 
+function reorderNode(nodes, id, direction) {
+  const index = nodes.findIndex((node) => node.id === id)
+  if (index >= 0) {
+    const nextIndex = direction === 'up' ? index - 1 : index + 1
+    if (nextIndex < 0 || nextIndex >= nodes.length) return nodes
+    const next = [...nodes]
+    const [item] = next.splice(index, 1)
+    next.splice(nextIndex, 0, item)
+    return next
+  }
+  return nodes.map((node) => ({ ...node, children: reorderNode(node.children || [], id, direction, node.id) }))
+}
+
 function getCurrentPage(website, pageId) {
   return website.pages.find((page) => page.id === pageId) || website.pages[0]
 }
@@ -587,6 +617,28 @@ function canDrop(nodes, parentId, type) {
 
 function applyToPage(website, pageId, mapper) {
   return { ...website, pages: website.pages.map((page) => (page.id === pageId ? mapper(page) : page)) }
+}
+
+function syncGlobalNode(website, sourceId, type) {
+  const sourcePage = website.pages.find((sitePage) => findNode(sitePage.nodes, sourceId))
+  const source = sourcePage ? findNode(sourcePage.nodes, sourceId)?.node : null
+  if (!source || source.type !== type) return website
+  return {
+    ...website,
+    pages: website.pages.map((sitePage) => {
+      const withoutType = sitePage.nodes.filter((node) => node.type !== type)
+      const insertionIndex = type === 'header' ? 0 : withoutType.length
+      withoutType.splice(insertionIndex, 0, cloneNodeClean(source))
+      return { ...sitePage, nodes: withoutType }
+    }),
+  }
+}
+
+function pageTemplateNodes(template, pageName) {
+  if (template === 'Blank') return []
+  if (template === 'Hotel') return hotelPageNodes(pageName)
+  if (template === 'Rooms' || template === 'Dining' || template === 'Events' || template === 'Contact') return hotelPageNodes(template)
+  return templateNodes(template || 'Restaurant Hotel')
 }
 
 function historyWrap(reducer) {
@@ -629,7 +681,7 @@ function editorReducer(state, action) {
       return { ...state, website: { ...state.website, name: action.name } }
     case 'ADD_PAGE': {
       const pageName = action.name || 'New Page'
-      const nodes = action.template === 'Hotel' ? hotelPageNodes(pageName) : [headerSection(), heroSection('Start building this page'), footerSection()]
+      const nodes = pageTemplateNodes(action.template || 'Blank', pageName)
       const nextPage = makePage(pageName, nodes)
       return { ...state, currentPageId: nextPage.id, selectedId: null, website: { ...state.website, pages: [...state.website.pages, nextPage], preferences: { ...state.website.preferences, currentPageId: nextPage.id } } }
     }
@@ -640,7 +692,7 @@ function editorReducer(state, action) {
     case 'DUPLICATE_PAGE': {
       const original = state.website.pages.find((p) => p.id === action.id)
       const copy = { ...structuredClone(original), id: uid('page'), name: `${original.name} Copy`, slug: `${original.slug}-copy` }
-      return { ...state, currentPageId: copy.id, website: { ...state.website, pages: [...state.website.pages, copy] } }
+      return { ...state, currentPageId: copy.id, website: { ...state.website, pages: [...state.website.pages, copy], preferences: { ...state.website.preferences, currentPageId: copy.id } } }
     }
     case 'DELETE_PAGE': {
       if (state.website.pages.length === 1) return state
@@ -699,6 +751,8 @@ function editorReducer(state, action) {
       const without = removeNode(page.nodes, action.id).nodes
       return { ...state, website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: insertNode(without, action.parentId, moving, action.index) })) }
     }
+    case 'REORDER_NODE':
+      return { ...state, website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: reorderNode(p.nodes, action.id, action.direction) })) }
     case 'DELETE_NODE':
       return { ...state, selectedId: null, website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: removeNode(p.nodes, action.id).nodes })) }
     case 'DUPLICATE_NODE': {
@@ -728,6 +782,16 @@ function editorReducer(state, action) {
       const found = findNode(page.nodes, action.id)?.node
       if (!found) return state
       return { ...state, website: { ...state.website, reusableComponents: [...state.website.reusableComponents, { id: uid('component'), name: found.props.name || widgetRegistry[found.type].name, node: structuredClone(found) }] }, notice: 'Reusable component saved' }
+    }
+    case 'ADD_MEDIA':
+      return { ...state, website: { ...state.website, mediaLibrary: [...(state.website.mediaLibrary || []), action.media] }, notice: 'Media added' }
+    case 'USE_MEDIA':
+      if (!state.selectedId) return state
+      return editorReducer(state, { type: 'UPDATE_NODE', id: state.selectedId, props: { src: action.src, alt: action.alt || 'Uploaded media' } })
+    case 'SYNC_GLOBAL_NODE': {
+      const found = findNode(page.nodes, action.id)?.node
+      if (!found || !['header', 'footer'].includes(found.type)) return { ...state, notice: 'Select a header or footer first.' }
+      return { ...state, website: syncGlobalNode(state.website, action.id, found.type), notice: `${widgetRegistry[found.type].name} synced to all pages` }
     }
     case 'UPDATE_GLOBAL':
       return { ...state, website: { ...state.website, globalStyles: { ...state.website.globalStyles, [action.group]: { ...state.website.globalStyles[action.group], [action.key]: action.value } } } }
@@ -820,10 +884,16 @@ function domToNode(element) {
   const tag = element.tagName.toLowerCase()
   const text = element.textContent?.trim() || ''
   const inlineStyles = parseInlineStyle(element.getAttribute('style') || '')
-  if (tag === 'header' || tag === 'nav') return makeNode('header', { props: { name: 'Imported Header' }, styles: { ...widgetRegistry.header.defaultStyles, ...inlineStyles } }, domChildren(element))
+  const className = element.getAttribute('class') || ''
+  const inferredStyles = inferLayoutStyles(className, inlineStyles)
+  if (tag === 'header' || tag === 'nav') return makeNode('header', { props: { name: 'Imported Header' }, styles: { ...widgetRegistry.header.defaultStyles, ...inferredStyles } }, domChildren(element))
   if (tag === 'footer') return makeNode('footer', { props: { name: 'Imported Footer' }, styles: { ...widgetRegistry.footer.defaultStyles, ...inlineStyles } }, domChildren(element))
-  if (['section', 'main', 'article'].includes(tag)) return makeNode('section', { props: { name: titleFromText(text, 'Imported Section') }, styles: { ...inlineStyles } }, domChildren(element))
-  if (['div', 'aside'].includes(tag)) return makeNode('container', { props: { name: titleFromText(text, 'Imported Container') }, styles: { ...inlineStyles } }, domChildren(element))
+  if (['section', 'main', 'article'].includes(tag)) return makeNode('section', { props: { name: titleFromText(text, 'Imported Section') }, styles: { ...inferredStyles } }, domChildren(element))
+  if (tag === 'form') return makeNode('form', { props: { name: 'Imported Form' }, styles: { ...inferredStyles } }, domChildren(element))
+  if (['div', 'aside'].includes(tag)) {
+    const type = inferredStyles.display === 'grid' ? 'grid' : inferredStyles.display === 'flex' ? 'flex' : 'container'
+    return makeNode(type, { props: { name: titleFromText(text, `Imported ${widgetRegistry[type].name}`) }, styles: { ...inferredStyles } }, domChildren(element))
+  }
   if (['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tag)) return makeNode('heading', { props: { text: text || 'Imported Heading', tag, name: 'Imported Heading' }, styles: { ...inlineStyles } })
   if (tag === 'p' || tag === 'span') return makeNode('paragraph', { props: { text: text || 'Imported text', name: 'Imported Text' }, styles: { ...inlineStyles } })
   if (tag === 'a' || tag === 'button') return makeNode('button', { props: { text: text || 'Imported Button', url: element.getAttribute('href') || '#', name: 'Imported Button' }, styles: { ...inlineStyles } })
@@ -832,6 +902,20 @@ function domToNode(element) {
   if (tag === 'input') return makeNode('input', { props: { placeholder: element.getAttribute('placeholder') || 'Imported input' }, styles: { ...inlineStyles } })
   if (tag === 'textarea') return makeNode('textarea', { props: { placeholder: element.getAttribute('placeholder') || 'Imported textarea' }, styles: { ...inlineStyles } })
   return text ? makeNode('paragraph', { props: { text, name: 'Imported Text' }, styles: { ...inlineStyles } }) : null
+}
+
+function inferLayoutStyles(className, inlineStyles) {
+  const styles = { ...inlineStyles }
+  const value = `${className} ${Object.entries(inlineStyles).map(([key, val]) => `${key}:${val}`).join(';')}`.toLowerCase()
+  if (value.includes('display:flex') || /\bflex\b/.test(value)) styles.display = 'flex'
+  if (value.includes('display:grid') || /\bgrid\b/.test(value)) styles.display = 'grid'
+  if (value.includes('items-center')) styles.alignItems = 'center'
+  if (value.includes('justify-between')) styles.justifyContent = 'space-between'
+  if (value.includes('text-center')) styles.textAlign = 'center'
+  if (value.includes('grid-cols-2')) styles.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))'
+  if (value.includes('grid-cols-3')) styles.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))'
+  if (value.includes('gap-')) styles.gap = styles.gap || '24px'
+  return styles
 }
 
 function domChildren(element) {
@@ -862,6 +946,8 @@ function initialState() {
   const parsed = loaded ? JSON.parse(loaded) : null
   const website = parsed?.schemaVersion >= 5 ? parsed : defaultWebsite()
   if (!website.homePageId) website.homePageId = website.pages[0].id
+  if (!website.mediaLibrary) website.mediaLibrary = []
+  if (!website.reusableComponents) website.reusableComponents = []
   const currentPageId = website.preferences?.currentPageId && website.pages.some((page) => page.id === website.preferences.currentPageId) ? website.preferences.currentPageId : website.pages[0].id
   return {
     website,
@@ -1014,7 +1100,7 @@ function IconButton({ children, title, active, onClick }) {
 }
 
 function LeftSidebar({ state, dispatch }) {
-  const tabs = [['pages', PanelLeft], ['widgets', Plus], ['sections', LayoutTemplate], ['templates', Sparkles], ['components', Copy], ['styles', Paintbrush], ['import', Upload]]
+  const tabs = [['pages', PanelLeft], ['widgets', Plus], ['sections', LayoutTemplate], ['templates', Sparkles], ['components', Copy], ['styles', Paintbrush], ['media', FolderOpen], ['import', Upload], ['export', Download]]
   return (
     <aside className="editor-scrollbar h-full overflow-y-auto border-r border-slate-200 bg-white">
       <div className="sticky top-0 z-30 grid grid-cols-3 gap-2 border-b border-slate-200 bg-white p-3 shadow-sm">
@@ -1026,27 +1112,25 @@ function LeftSidebar({ state, dispatch }) {
       {state.leftPanel === 'templates' && <TemplatesPanel dispatch={dispatch} />}
       {state.leftPanel === 'components' && <ComponentsPanel state={state} dispatch={dispatch} />}
       {state.leftPanel === 'styles' && <GlobalStyles state={state} dispatch={dispatch} />}
+      {state.leftPanel === 'media' && <MediaPanel state={state} dispatch={dispatch} />}
       {state.leftPanel === 'import' && <ImportPanel dispatch={dispatch} />}
+      {state.leftPanel === 'export' && <ExportPanel state={state} />}
     </aside>
   )
 }
 
 function PagesPanel({ state, dispatch }) {
   const [name, setName] = useState('')
+  const [modalOpen, setModalOpen] = useState(false)
+  const [template, setTemplate] = useState('Blank')
+  const createPage = (pageName = name || 'New Page', pageTemplate = template) => {
+    dispatch({ type: 'ADD_PAGE', name: pageName, template: pageTemplate })
+    setName('')
+    setModalOpen(false)
+  }
   return (
     <Panel title="Pages">
-      <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-3">
-        <div className="mb-2 text-sm font-bold text-blue-950">Add a new page</div>
-        <div className="flex gap-2">
-          <input className="min-w-0 flex-1 rounded-md border border-blue-200 px-3 py-2 text-sm" placeholder="Page name, e.g. Gallery" value={name} onChange={(e) => setName(e.target.value)} />
-          <button className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-bold text-white" onClick={() => { dispatch({ type: 'ADD_PAGE', name: name || 'New Page' }); setName('') }}><FilePlus size={16} /> Add</button>
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {['Rooms', 'Dining', 'Events', 'Contact'].map((pageName) => (
-            <button key={pageName} className="rounded-md border border-blue-200 bg-white px-2 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100" onClick={() => dispatch({ type: 'ADD_PAGE', name: pageName, template: 'Hotel' })}>{pageName} Page</button>
-          ))}
-        </div>
-      </div>
+      <button className="mb-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-blue-600 px-3 py-3 text-sm font-extrabold text-white hover:bg-blue-700" onClick={() => setModalOpen(true)}><FilePlus size={16} /> Create Page From Template</button>
       <div className="space-y-2">
         {state.website.pages.map((page, index) => (
           <div key={page.id} className={clsx('rounded-md border p-3', page.id === state.currentPageId ? 'border-blue-400 bg-blue-50' : 'border-slate-200')}>
@@ -1065,6 +1149,30 @@ function PagesPanel({ state, dispatch }) {
           </div>
         ))}
       </div>
+      {modalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-6" onClick={() => setModalOpen(false)}>
+          <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-editor" onClick={(event) => event.stopPropagation()}>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-slate-950">Create a page</h3>
+              <button className="rounded-md border border-slate-200 px-2 py-1 text-xs font-bold" onClick={() => setModalOpen(false)}>Close</button>
+            </div>
+            <Labeled label="Page name">
+              <input className="field w-full rounded-md border border-slate-200 px-3 py-2 text-sm" placeholder="Pricing, Rooms, Contact" value={name} onChange={(event) => setName(event.target.value)} />
+            </Labeled>
+            <Labeled label="Starting template">
+              <select className="field w-full rounded-md border border-slate-200 px-3 py-2 text-sm" value={template} onChange={(event) => setTemplate(event.target.value)}>
+                {['Blank', 'Restaurant Hotel', 'SaaS', 'Agency', 'Restaurant', 'Portfolio', 'Business', 'Rooms', 'Dining', 'Events', 'Contact'].map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </Labeled>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {['Blank', 'Rooms', 'Dining', 'Events', 'Contact', 'Restaurant Hotel'].map((item) => (
+                <button key={item} className="rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm font-bold text-blue-800 hover:bg-blue-100" onClick={() => createPage(item === 'Blank' ? name || 'New Page' : item, item)}>{item}</button>
+              ))}
+            </div>
+            <button className="mt-4 w-full rounded-md bg-slate-950 px-3 py-3 text-sm font-extrabold text-white" onClick={() => createPage()}>Create Selected Page</button>
+          </div>
+        </div>
+      )}
     </Panel>
   )
 }
@@ -1148,8 +1256,71 @@ function ComponentsPanel({ state }) {
   )
 }
 
+function MediaPanel({ state, dispatch }) {
+  const page = getCurrentPage(state.website, state.currentPageId)
+  const selected = state.selectedId ? findNode(page.nodes, state.selectedId)?.node : null
+  const readFile = (event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => dispatch({ type: 'ADD_MEDIA', media: { id: uid('media'), name: file.name, src: String(reader.result || ''), alt: file.name } })
+    reader.readAsDataURL(file)
+  }
+  return (
+    <Panel title="Media Library">
+      <label className="mb-4 block rounded-md border border-dashed border-blue-200 bg-blue-50 p-4 text-sm font-bold text-blue-800 hover:bg-blue-100">
+        Upload image
+        <input className="mt-2 block w-full text-xs" type="file" accept="image/*" onChange={readFile} />
+      </label>
+      {selected?.type === 'image' && <div className="mb-3 rounded-md bg-amber-50 p-3 text-xs font-semibold text-amber-900">Select any media below to apply it to the selected image.</div>}
+      {(state.website.mediaLibrary || []).length === 0 && <Empty text="Uploaded images will appear here." />}
+      <div className="grid grid-cols-2 gap-2">
+        {(state.website.mediaLibrary || []).map((media) => (
+          <button key={media.id} className="overflow-hidden rounded-md border border-slate-200 bg-white text-left hover:border-blue-400" onClick={() => dispatch({ type: 'USE_MEDIA', src: media.src, alt: media.alt })}>
+            <img className="h-24 w-full object-cover" src={media.src} alt={media.alt} />
+            <span className="block truncate px-2 py-1 text-xs font-semibold">{media.name}</span>
+          </button>
+        ))}
+      </div>
+    </Panel>
+  )
+}
+
 function GlobalStyles({ state, dispatch }) {
   return <Panel title="Global Styles"><div className="space-y-4">{Object.entries(state.website.globalStyles.colors).map(([key, value]) => <Labeled key={key} label={key}><input type="color" value={value} onChange={(e) => dispatch({ type: 'UPDATE_GLOBAL', group: 'colors', key, value: e.target.value })} /></Labeled>)}</div></Panel>
+}
+
+function ExportPanel({ state }) {
+  const [copied, setCopied] = useState('')
+  const html = useMemo(() => exportWebsiteHtml(state.website), [state.website])
+  const css = useMemo(() => exportWebsiteCss(state.website), [state.website])
+  const download = (name, content, type) => {
+    const blob = new Blob([content], { type })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = name
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+  const copy = async (label, content) => {
+    await navigator.clipboard.writeText(content)
+    setCopied(label)
+  }
+  return (
+    <Panel title="Export HTML/CSS">
+      <div className="space-y-3">
+        <button className="w-full rounded-md bg-blue-600 px-3 py-3 text-sm font-extrabold text-white" onClick={() => download('website.html', html, 'text/html')}>Download HTML</button>
+        <button className="w-full rounded-md border border-blue-200 bg-blue-50 px-3 py-3 text-sm font-extrabold text-blue-800" onClick={() => download('styles.css', css, 'text/css')}>Download CSS</button>
+        <div className="grid grid-cols-2 gap-2">
+          <MiniButton onClick={() => copy('HTML', html)}>Copy HTML</MiniButton>
+          <MiniButton onClick={() => copy('CSS', css)}>Copy CSS</MiniButton>
+        </div>
+        {copied && <div className="rounded-md bg-green-50 p-2 text-xs font-bold text-green-700">{copied} copied</div>}
+        <textarea className="h-52 w-full rounded-md border border-slate-200 p-3 text-xs font-mono" readOnly value={html.slice(0, 4000)} />
+      </div>
+    </Panel>
+  )
 }
 
 function DraggableTile({ label, icon: Icon, payload }) {
@@ -1226,7 +1397,19 @@ function Canvas({ state, page, dispatch, zoom }) {
             onDrop={(e) => handleDrop(e, 'root', state, dispatch)}
           >
             {page.settings?.importedCss && <style>{page.settings.importedCss}</style>}
-            {page.nodes.length === 0 ? <EmptyDrop dispatch={dispatch} state={state} /> : page.nodes.map((node) => <RenderNode key={node.id} node={node} state={state} dispatch={dispatch} parentId="root" />)}
+            {page.nodes.length === 0 ? (
+              <EmptyDrop dispatch={dispatch} state={state} />
+            ) : (
+              <>
+                <DropZone parentId="root" index={0} state={state} dispatch={dispatch} />
+                {page.nodes.map((node, index) => (
+                  <div key={node.id}>
+                    <RenderNode node={node} state={state} dispatch={dispatch} parentId="root" />
+                    <DropZone parentId="root" index={index + 1} state={state} dispatch={dispatch} />
+                  </div>
+                ))}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1255,19 +1438,34 @@ function EmptyDrop({ dispatch, state }) {
   )
 }
 
-function handleDrop(e, parentId, state, dispatch) {
+function DropZone({ parentId, index, state, dispatch, compact = false }) {
+  const [active, setActive] = useState(false)
+  return (
+    <div
+      className={clsx('relative flex items-center justify-center transition-all', active ? 'h-12 bg-blue-50' : compact ? 'h-3' : 'h-2')}
+      onDragEnter={(event) => { event.preventDefault(); setActive(true) }}
+      onDragOver={(event) => { event.preventDefault(); setActive(true) }}
+      onDragLeave={() => setActive(false)}
+      onDrop={(event) => { setActive(false); handleDrop(event, parentId, state, dispatch, index) }}
+    >
+      {active && <div className="pointer-events-none absolute inset-x-5 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-blue-500"><span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600 px-3 py-1 text-[11px] font-extrabold text-white shadow">Drop here</span></div>}
+    </div>
+  )
+}
+
+function handleDrop(e, parentId, state, dispatch, index = null) {
   e.preventDefault()
   e.stopPropagation()
   const raw = e.dataTransfer.getData('application/editor')
   if (!raw) return
   const payload = JSON.parse(raw)
-  if (payload.type === 'widget') dispatch({ type: 'ADD_NODE', widgetType: payload.widgetType, parentId })
-  if (payload.type === 'quick') dispatch({ type: 'ADD_NODE', node: quickSection(payload.kind), parentId })
+  if (payload.type === 'widget') dispatch({ type: 'ADD_NODE', widgetType: payload.widgetType, parentId, index })
+  if (payload.type === 'quick') dispatch({ type: 'ADD_NODE', node: quickSection(payload.kind), parentId, index })
   if (payload.type === 'component') {
     const component = state.website.reusableComponents.find((item) => item.id === payload.componentId)
-    if (component) dispatch({ type: 'ADD_NODE', node: cloneNode(component.node), parentId })
+    if (component) dispatch({ type: 'ADD_NODE', node: cloneNode(component.node), parentId, index })
   }
-  if (payload.type === 'move') dispatch({ type: 'MOVE_NODE', id: payload.id, parentId })
+  if (payload.type === 'move') dispatch({ type: 'MOVE_NODE', id: payload.id, parentId, index })
 }
 
 function RenderNode({ node, state, dispatch, parentId }) {
@@ -1300,7 +1498,13 @@ function RenderNode({ node, state, dispatch, parentId }) {
       {node.type === 'textarea' && <textarea {...common} placeholder={node.props.placeholder} readOnly />}
       {widget.container && (
         <div {...containerProps}>
-          {(node.children || []).map((child) => <RenderNode key={child.id} node={child} state={state} dispatch={dispatch} parentId={node.id} />)}
+          {(node.children || []).length > 0 && <DropZone parentId={node.id} index={0} state={state} dispatch={dispatch} compact />}
+          {(node.children || []).map((child, index) => (
+            <div key={child.id}>
+              <RenderNode node={child} state={state} dispatch={dispatch} parentId={node.id} />
+              <DropZone parentId={node.id} index={index + 1} state={state} dispatch={dispatch} compact />
+            </div>
+          ))}
           {(node.children || []).length === 0 && <EmptyContainerDrop node={node} state={state} dispatch={dispatch} />}
         </div>
       )}
@@ -1433,7 +1637,7 @@ function RightPanel({ state, dispatch, selected, page }) {
   const tabs = [['settings', Settings], ['navigator', Braces], ['ai', Bot]]
   return (
     <aside className="editor-scrollbar h-full overflow-y-auto border-l border-slate-200 bg-white">
-      <div className="flex border-b border-slate-200 p-2">{tabs.map(([tab, Icon]) => <button key={tab} className={clsx('flex-1 rounded-md p-2 capitalize', state.rightPanel === tab && 'bg-blue-50 text-blue-700')} onClick={() => dispatch({ type: 'SET_RIGHT_PANEL', panel: tab, skipHistory: true })}><Icon size={16} className="mx-auto" /></button>)}</div>
+      <div className="flex border-b border-slate-200 p-2">{tabs.map(([tab, Icon]) => <button key={tab} title={tab} className={clsx('flex-1 rounded-md p-2 capitalize', state.rightPanel === tab && 'bg-blue-50 text-blue-700')} onClick={() => dispatch({ type: 'SET_RIGHT_PANEL', panel: tab, skipHistory: true })}><Icon size={16} className="mx-auto" /></button>)}</div>
       {state.rightPanel === 'settings' && <SettingsPanel selected={selected} dispatch={dispatch} state={state} />}
       {state.rightPanel === 'navigator' && <Navigator page={page} dispatch={dispatch} selectedId={state.selectedId} />}
       {state.rightPanel === 'ai' && <AIPanel state={state} dispatch={dispatch} selected={selected} />}
@@ -1464,12 +1668,14 @@ function SettingsPanel({ selected, dispatch, state }) {
       <Segment label="Alignment" value={selected.styles.textAlign || selected.styles.alignItems} options={[['left', 'Left', AlignLeft], ['center', 'Center', AlignCenter], ['right', 'Right', AlignRight]]} onChange={(v) => dispatch({ type: 'UPDATE_NODE', id: selected.id, styles: type === 'heading' || type === 'paragraph' ? { textAlign: v } : { alignItems: v === 'left' ? 'flex-start' : v === 'right' ? 'flex-end' : 'center' } })} />
       {widgetRegistry[type].container && <Segment label="Direction" value={selected.styles.flexDirection} options={[['row', 'Horizontal', Columns3], ['column', 'Vertical', PanelRight]]} onChange={(v) => dispatch({ type: 'UPDATE_NODE', id: selected.id, styles: { display: 'flex', flexDirection: v } })} />}
       {type === 'grid' && <Labeled label={`${state.device} Columns`}><input className="field" type="number" min="1" max="6" value={(selected.responsiveStyles?.[state.device]?.gridTemplateColumns || '').match(/repeat\((\d)/)?.[1] || selected.props.columns || 3} onChange={(e) => dispatch({ type: 'UPDATE_NODE', id: selected.id, responsiveStyles: { ...selected.responsiveStyles, [state.device]: { ...selected.responsiveStyles?.[state.device], gridTemplateColumns: `repeat(${e.target.value}, minmax(0, 1fr))` } } })} /></Labeled>}
+      <ResponsivePanel selected={selected} dispatch={dispatch} device={state.device} />
       <SectionTitle>Advanced</SectionTitle>
       <div className="grid grid-cols-2 gap-2">
         <MiniButton onClick={() => dispatch({ type: 'TOGGLE_NODE', id: selected.id, field: 'hidden' })}>Hide</MiniButton>
         <MiniButton onClick={() => dispatch({ type: 'TOGGLE_NODE', id: selected.id, field: 'locked' })}>Lock</MiniButton>
         <MiniButton onClick={() => dispatch({ type: 'PASTE_STYLE' })}>Paste Style</MiniButton>
         <MiniButton onClick={() => dispatch({ type: 'APPLY_STYLE_ALL' })}>Apply to All</MiniButton>
+        {['header', 'footer'].includes(type) && <MiniButton onClick={() => dispatch({ type: 'SYNC_GLOBAL_NODE', id: selected.id })}>Sync All Pages</MiniButton>}
       </div>
     </Panel>
   )
@@ -1477,6 +1683,23 @@ function SettingsPanel({ selected, dispatch, state }) {
 
 function Navigator({ page, dispatch, selectedId }) {
   return <Panel title="Navigator"><h3 className="mb-3 text-sm font-bold">{page.name}</h3><div className="space-y-1">{page.nodes.map((node) => <TreeNode key={node.id} node={node} dispatch={dispatch} selectedId={selectedId} depth={0} />)}</div></Panel>
+}
+
+function ResponsivePanel({ selected, dispatch, device }) {
+  const deviceStyles = selected.responsiveStyles?.[device] || {}
+  const update = (key, value) => dispatch({ type: 'UPDATE_NODE', id: selected.id, responsiveStyles: { ...selected.responsiveStyles, [device]: { ...deviceStyles, [key]: value } } })
+  return (
+    <>
+      <SectionTitle>{device} Responsive</SectionTitle>
+      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+        <StyleInput label={`${device} Text Size`} value={deviceStyles.fontSize || ''} onChange={(v) => update('fontSize', v)} />
+        <StyleInput label={`${device} Width`} value={deviceStyles.width || ''} onChange={(v) => update('width', v)} />
+        <StyleInput label={`${device} Max Width`} value={deviceStyles.maxWidth || ''} onChange={(v) => update('maxWidth', v)} />
+        <StyleInput label={`${device} Padding`} value={deviceStyles.padding || ''} onChange={(v) => update('padding', v)} />
+        <Segment label={`${device} Text Align`} value={deviceStyles.textAlign || selected.styles.textAlign} options={[['left', 'Left', AlignLeft], ['center', 'Center', AlignCenter], ['right', 'Right', AlignRight]]} onChange={(v) => update('textAlign', v)} />
+      </div>
+    </>
+  )
 }
 
 function SpacingPresets({ selected, dispatch }) {
@@ -1534,6 +1757,8 @@ function TreeNode({ node, dispatch, selectedId, depth }) {
       <div className={clsx('flex items-center gap-1 rounded-md px-2 py-1.5 text-sm hover:bg-slate-100', selectedId === node.id && 'bg-blue-50 text-blue-700')} style={{ paddingLeft: 8 + depth * 14 }}>
         <button onClick={() => setOpen(!open)}><ChevronDown size={13} className={clsx(!open && '-rotate-90')} /></button>
         <button className="min-w-0 flex-1 truncate text-left" onClick={() => dispatch({ type: 'SELECT', id: node.id, skipHistory: true })}>{node.props.name || widgetRegistry[node.type].name}</button>
+        <button title="Move up" onClick={() => dispatch({ type: 'REORDER_NODE', id: node.id, direction: 'up' })}><ArrowUp size={13} /></button>
+        <button title="Move down" onClick={() => dispatch({ type: 'REORDER_NODE', id: node.id, direction: 'down' })}><ArrowDown size={13} /></button>
         <button onClick={() => dispatch({ type: 'DUPLICATE_NODE', id: node.id })}><Copy size={13} /></button>
         <button onClick={() => dispatch({ type: 'DELETE_NODE', id: node.id })}><Trash2 size={13} /></button>
       </div>
@@ -1610,6 +1835,73 @@ function RenderPreview({ node, device }) {
   return <div style={style}>{children}</div>
 }
 
+function exportWebsiteHtml(website) {
+  const pages = website.pages.map((page) => `
+    <article class="export-page" id="${escapeHtml(page.slug)}">
+      ${page.nodes.map((node) => nodeToHtml(node, 'desktop')).join('\n')}
+    </article>`).join('\n')
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${escapeHtml(website.name)}</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+${pages}
+</body>
+</html>`
+}
+
+function exportWebsiteCss(website) {
+  return `:root {
+  --theme-primary: ${website.globalStyles.colors.primary};
+  --theme-secondary: ${website.globalStyles.colors.secondary};
+  --theme-text: ${website.globalStyles.colors.text};
+  --theme-background: ${website.globalStyles.colors.background};
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: var(--theme-text); background: var(--theme-background); }
+a { cursor: pointer; }
+img { max-width: 100%; display: block; }
+.export-page:not(:first-child) { border-top: 1px solid #e2e8f0; }
+@media (max-width: 900px) {
+  [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  [style*="flex-direction: row"] { flex-direction: column !important; align-items: stretch !important; }
+  h1, h2 { font-size: 34px !important; text-align: center; }
+  p { text-align: center; }
+}`
+}
+
+function nodeToHtml(node, device) {
+  if (node.hidden) return ''
+  const style = styleToString({ ...node.styles, ...(node.responsiveStyles?.[device] || {}) })
+  const children = (node.children || []).map((child) => nodeToHtml(child, device)).join('\n')
+  if (node.type === 'heading') {
+    const tag = node.props.tag || 'h2'
+    return `<${tag} style="${style}">${escapeHtml(node.props.text)}</${tag}>`
+  }
+  if (node.type === 'paragraph') return `<p style="${style}">${escapeHtml(node.props.text)}</p>`
+  if (node.type === 'button') return `<a href="${escapeHtml(node.props.url || '#')}" style="${style}">${escapeHtml(node.props.text)}</a>`
+  if (node.type === 'dropdown') return `<div style="${style}">${escapeHtml(node.props.text)}</div>`
+  if (node.type === 'image') return `<img src="${escapeHtml(node.props.src)}" alt="${escapeHtml(node.props.alt || '')}" style="${style}" />`
+  if (node.type === 'input') return `<input placeholder="${escapeHtml(node.props.placeholder || '')}" style="${style}" />`
+  if (node.type === 'textarea') return `<textarea placeholder="${escapeHtml(node.props.placeholder || '')}" style="${style}"></textarea>`
+  return `<div style="${style}">${children}</div>`
+}
+
+function styleToString(styles) {
+  return Object.entries(styles || {})
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}: ${String(value).replace(/"/g, '&quot;')}`)
+    .join('; ')
+}
+
+function escapeHtml(value = '') {
+  return String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char])
+}
+
 function CommandPalette({ dispatch, close }) {
   const commands = [
     ['Add Hero', () => dispatch({ type: 'ADD_NODE', node: quickSection('hero'), parentId: 'root' })],
@@ -1629,7 +1921,10 @@ function SectionTitle({ children }) { return <h3 className="mb-2 mt-5 text-xs fo
 function Empty({ text }) { return <div className="rounded-md border border-dashed border-slate-300 p-4 text-center text-sm text-slate-500">{text}</div> }
 function MiniButton({ children, ...props }) { return <button {...props} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold hover:bg-slate-50 disabled:opacity-40">{children}</button> }
 function Labeled({ label, children }) { return <label className="mb-3 block text-xs font-bold capitalize text-slate-600"><span className="mb-1 block">{label}</span>{children}</label> }
-function StyleInput({ label, value, onChange, type = 'text' }) { return <Labeled label={label}><input className="field w-full rounded-md border border-slate-200 px-3 py-2 text-sm" type={type} value={value || (type === 'color' ? '#ffffff' : '')} onChange={(e) => onChange(e.target.value)} /></Labeled> }
+function colorValue(value) {
+  return /^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff'
+}
+function StyleInput({ label, value, onChange, type = 'text' }) { return <Labeled label={label}><input className="field w-full rounded-md border border-slate-200 px-3 py-2 text-sm" type={type} value={type === 'color' ? colorValue(value) : value || ''} onChange={(e) => onChange(e.target.value)} /></Labeled> }
 function Segment({ label, value, options, onChange }) { return <Labeled label={label}><div className="grid grid-cols-3 gap-1">{options.map(([val, text, Icon]) => <button key={val} className={clsx('rounded-md border p-2 text-xs font-semibold', value === val || (value === 'flex-start' && val === 'left') || (value === 'flex-end' && val === 'right') ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200')} onClick={() => onChange(val)}><Icon size={14} className="mx-auto mb-1" />{text}</button>)}</div></Labeled> }
 
 export default App
