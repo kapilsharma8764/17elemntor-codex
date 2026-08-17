@@ -539,13 +539,17 @@ function editorReducer(state, action) {
     case 'ADD_BLANK_AFTER': {
       const location = findNodeLocation(page.nodes, action.id)
       if (!location) return state
-      const newNodeType = location.parentId === 'root' ? 'section' : 'container'
+      const requestedType = action.widgetType || (location.parentId === 'root' ? 'section' : 'container')
+      const newNodeType = location.parentId === 'root' && !widgetRegistry[requestedType].allowedParents.includes('root') ? 'section' : requestedType
       if (!canDrop(page.nodes, location.parentId, newNodeType)) return { ...state, notice: 'Cannot add a blank block here.' }
       const blankNode = makeNode(newNodeType, {
-        props: { name: newNodeType === 'section' ? 'Blank Section' : 'Blank Container' },
-        styles: newNodeType === 'section'
-          ? { padding: '48px 32px', background: '#ffffff', minHeight: '220px' }
-          : { padding: '24px', background: '#ffffff', minHeight: '160px', border: '1px dashed #bfdbfe' },
+        props: { name: `Blank ${widgetRegistry[newNodeType].name}` },
+        styles: {
+          ...(newNodeType === 'section'
+            ? { padding: '48px 32px', background: '#ffffff', minHeight: '220px' }
+            : { padding: '24px', background: '#ffffff', minHeight: '160px', border: '1px dashed #bfdbfe' }),
+          ...(action.styles || {}),
+        },
       })
       return {
         ...state,
@@ -662,6 +666,15 @@ function htmlToSchema(html) {
   const doc = new DOMParser().parseFromString(html, 'text/html')
   const roots = [...doc.body.children]
   return roots.map(domToNode).filter(Boolean)
+}
+
+function splitImportedSource(source) {
+  const cssParts = []
+  const html = source.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (_, css) => {
+    cssParts.push(css.trim())
+    return ''
+  })
+  return { html, css: cssParts.join('\n\n') }
 }
 
 function domToNode(element) {
@@ -940,32 +953,27 @@ function WidgetPanel() {
 }
 
 function ImportPanel({ dispatch }) {
-  const [html, setHtml] = useState('')
-  const [css, setCss] = useState('')
+  const [source, setSource] = useState('')
   const importNow = () => {
+    const { html, css } = splitImportedSource(source)
     const nodes = htmlToSchema(html)
     dispatch({ type: 'IMPORT_NODES', nodes, css })
   }
-  const readFile = (setter) => (event) => {
+  const readFile = (event) => {
     const file = event.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => setter(String(reader.result || ''))
+    reader.onload = () => setSource(String(reader.result || ''))
     reader.readAsText(file)
   }
   return (
     <Panel title="Import Website">
       <div className="space-y-3">
         <label className="block rounded-md border border-dashed border-slate-300 p-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-          Upload HTML
-          <input className="mt-2 block w-full text-xs" type="file" accept=".html,.htm,.txt" onChange={readFile(setHtml)} />
+          Upload one HTML file
+          <input className="mt-2 block w-full text-xs" type="file" accept=".html,.htm,.txt" onChange={readFile} />
         </label>
-        <textarea className="h-40 w-full rounded-md border border-slate-200 p-3 text-sm" placeholder="<header>...</header>" value={html} onChange={(e) => setHtml(e.target.value)} />
-        <label className="block rounded-md border border-dashed border-slate-300 p-3 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-          Upload CSS
-          <input className="mt-2 block w-full text-xs" type="file" accept=".css,.txt" onChange={readFile(setCss)} />
-        </label>
-        <textarea className="h-28 w-full rounded-md border border-slate-200 p-3 text-sm" placeholder="body { ... }" value={css} onChange={(e) => setCss(e.target.value)} />
+        <textarea className="h-64 w-full rounded-md border border-slate-200 p-3 text-sm" placeholder="<style>...</style><header>...</header>" value={source} onChange={(e) => setSource(e.target.value)} />
         <button className="w-full rounded-md bg-blue-600 px-3 py-3 text-sm font-bold text-white hover:bg-blue-700" onClick={importNow}>Convert to Editable Page</button>
       </div>
     </Panel>
@@ -1215,6 +1223,14 @@ function EditableTag({ tag, node, common, dispatch, prop }) {
 }
 
 function ElementShell({ node, selected, dispatch, children }) {
+  const [addOpen, setAddOpen] = useState(false)
+  const addOptions = [
+    ['Section', 'section', {}],
+    ['Container', 'container', {}],
+    ['Grid', 'grid', {}],
+    ['Flex Horizontal', 'flex', { flexDirection: 'row' }],
+    ['Flex Vertical', 'flex', { flexDirection: 'column', alignItems: 'stretch' }],
+  ]
   return (
     <div className="group relative">
       {selected && widgetRegistry[node.type].container && (
@@ -1227,17 +1243,32 @@ function ElementShell({ node, selected, dispatch, children }) {
         </div>
       )}
       {children}
-      {selected && (
-        <button
-          className="absolute bottom-0 left-1/2 z-20 -translate-x-1/2 translate-y-1/2 rounded-full border border-blue-200 bg-blue-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:bg-blue-700"
-          title="Add a blank editable section below"
-          onClick={(event) => {
-            event.stopPropagation()
-            dispatch({ type: 'ADD_BLANK_AFTER', id: node.id })
-          }}
-        >
-          + Add Section
-        </button>
+      {selected && widgetRegistry[node.type].container && (
+        <div className="absolute bottom-0 left-1/2 z-30 -translate-x-1/2 translate-y-1/2" onClick={(event) => event.stopPropagation()}>
+          <button
+            className="rounded-full border border-blue-200 bg-blue-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:bg-blue-700"
+            title="Add a blank editable block below"
+            onClick={() => setAddOpen(!addOpen)}
+          >
+            + Add
+          </button>
+          {addOpen && (
+            <div className="absolute left-1/2 top-full mt-2 w-44 -translate-x-1/2 overflow-hidden rounded-md border border-slate-200 bg-white text-xs font-bold text-slate-700 shadow-editor">
+              {addOptions.map(([label, widgetType, styles]) => (
+                <button
+                  key={label}
+                  className="block w-full px-3 py-2 text-left hover:bg-blue-50 hover:text-blue-700"
+                  onClick={() => {
+                    dispatch({ type: 'ADD_BLANK_AFTER', id: node.id, widgetType, styles })
+                    setAddOpen(false)
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -1400,8 +1431,8 @@ function applyAiOperations(ops, state, dispatch) {
 
 function Preview({ state, page, dispatch }) {
   return (
-    <div className="min-h-screen bg-slate-200 p-4">
-      <div className="mb-4 flex items-center justify-between rounded-md bg-white p-3 shadow"><strong>Preview: {page.name}</strong><div className="flex gap-2"><button className="rounded-md border px-3 py-2" onClick={() => dispatch({ type: 'TOGGLE_PREVIEW', skipHistory: true })}>Back to Editor</button></div></div>
+    <div className="min-h-screen bg-slate-200">
+      <button className="fixed right-4 top-4 z-50 rounded-md bg-slate-900 px-4 py-2 text-sm font-bold text-white shadow" onClick={() => dispatch({ type: 'TOGGLE_PREVIEW', skipHistory: true })}>Back</button>
       <div className="mx-auto bg-white shadow-editor" style={{ width: devices[state.device], '--theme-primary': state.website.globalStyles.colors.primary, '--theme-secondary': state.website.globalStyles.colors.secondary, '--theme-text': state.website.globalStyles.colors.text }}>
         {page.settings?.importedCss && <style>{page.settings.importedCss}</style>}
         {page.nodes.map((node) => <RenderPreview key={node.id} node={node} device={state.device} />)}
