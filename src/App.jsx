@@ -43,6 +43,7 @@ import {
 } from 'lucide-react'
 
 const STORAGE_KEY = 'ai-elementor-react-editor-v1'
+const SCHEMA_VERSION = 6
 const devices = { desktop: 1120, tablet: 760, mobile: 390 }
 const uid = (prefix = 'node') => `${prefix}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -455,6 +456,102 @@ function hotelFooter() {
   ])
 }
 
+const templateCatalog = [
+  ['Portfolio Minimal', 'Portfolio', '#111827', '#2563eb', 'Selected work with a polished personal brand', ['Case Studies', 'Creative Direction', 'Contact'], 'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1100&q=80'],
+  ['Creative Portfolio', 'Portfolio', '#0f172a', '#84cc16', 'Bold portfolio for designers and studios', ['Brand Systems', 'Web Projects', 'Art Direction'], 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1100&q=80'],
+  ['Photographer', 'Portfolio', '#18181b', '#f97316', 'A gallery-first site for visual storytellers', ['Weddings', 'Portraits', 'Editorial'], 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=1100&q=80'],
+  ['Restaurant Classic', 'Food', '#2f1b12', '#b45309', 'Memorable dining with menus and reservations', ['Seasonal Menu', 'Private Dining', 'Reservations'], 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=1100&q=80'],
+  ['Cafe Modern', 'Food', '#1f2937', '#d97706', 'Warm cafe landing page with daily specials', ['Coffee Bar', 'Bakery', 'Events'], 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1100&q=80'],
+  ['Cloud Kitchen', 'Food', '#172554', '#ef4444', 'Delivery-first food brand and menu website', ['Fast Orders', 'Combos', 'Catering'], 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=1100&q=80'],
+  ['Boutique Hotel', 'Hospitality', '#132238', '#b45309', 'Rooms, dining, amenities, and booking flow', ['Suites', 'Dining', 'Concierge'], 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?auto=format&fit=crop&w=1100&q=80'],
+  ['Resort Escape', 'Hospitality', '#164e63', '#06b6d4', 'Relaxed resort website with immersive sections', ['Spa', 'Villas', 'Experiences'], 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1100&q=80'],
+  ['Travel Agency', 'Travel', '#0f3d3e', '#14b8a6', 'Trip packages, destinations, and inquiry form', ['Destinations', 'Guided Tours', 'Custom Plans'], 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1100&q=80'],
+  ['SaaS Launch', 'SaaS', '#0f172a', '#2563eb', 'Product landing page for a software launch', ['Dashboard', 'Automation', 'Analytics'], 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1100&q=80'],
+  ['AI Startup', 'SaaS', '#111827', '#7c3aed', 'Modern AI startup site with feature blocks', ['AI Assistant', 'Workflows', 'Security'], 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1100&q=80'],
+  ['Mobile App', 'SaaS', '#1e1b4b', '#06b6d4', 'App landing page with benefits and CTA', ['Fast Setup', 'Sync', 'Notifications'], 'https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1100&q=80'],
+  ['Digital Agency', 'Agency', '#111827', '#f97316', 'Agency homepage for services and leads', ['Strategy', 'Design', 'Growth'], 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1100&q=80'],
+  ['Marketing Studio', 'Agency', '#312e81', '#ec4899', 'Campaign-focused agency website', ['SEO', 'Paid Ads', 'Branding'], 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1100&q=80'],
+  ['Consulting Firm', 'Business', '#1f2937', '#0ea5e9', 'Professional consulting website structure', ['Advisory', 'Operations', 'Reports'], 'https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=1100&q=80'],
+  ['Finance Advisor', 'Business', '#0f172a', '#22c55e', 'Trust-focused finance services site', ['Planning', 'Investments', 'Tax Support'], 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1100&q=80'],
+  ['Real Estate', 'Business', '#064e3b', '#10b981', 'Listings and property inquiry website', ['Homes', 'Apartments', 'Valuation'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1100&q=80'],
+  ['Construction', 'Business', '#1c1917', '#f59e0b', 'Contractor website with project sections', ['Renovation', 'Commercial', 'Planning'], 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1100&q=80'],
+  ['Clinic Care', 'Health', '#164e63', '#06b6d4', 'Medical clinic site with services and contact', ['Consultation', 'Diagnostics', 'Care Plans'], 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=1100&q=80'],
+  ['Dental Clinic', 'Health', '#0f766e', '#14b8a6', 'Friendly dental appointment website', ['Cleaning', 'Implants', 'Whitening'], 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1100&q=80'],
+  ['Fitness Gym', 'Fitness', '#171717', '#ef4444', 'Gym website with programs and trainers', ['Strength', 'HIIT', 'Nutrition'], 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1100&q=80'],
+  ['Yoga Studio', 'Fitness', '#3f3f46', '#a3e635', 'Calm yoga studio website with classes', ['Beginners', 'Workshops', 'Retreats'], 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1100&q=80'],
+  ['Online Course', 'Education', '#1e3a8a', '#f59e0b', 'Course sales page with curriculum blocks', ['Lessons', 'Mentors', 'Certificate'], 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1100&q=80'],
+  ['School Website', 'Education', '#0f172a', '#3b82f6', 'School homepage with admissions sections', ['Programs', 'Admissions', 'Campus'], 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1100&q=80'],
+  ['Ecommerce Store', 'Ecommerce', '#111827', '#2563eb', 'Product store landing and category blocks', ['New Arrivals', 'Bundles', 'Support'], 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1100&q=80'],
+  ['Fashion Brand', 'Ecommerce', '#27272a', '#db2777', 'Editorial shop page for fashion labels', ['Lookbook', 'Collections', 'Offers'], 'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1100&q=80'],
+  ['Event Landing', 'Event', '#312e81', '#f97316', 'Conference or event promotion page', ['Speakers', 'Schedule', 'Tickets'], 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1100&q=80'],
+  ['Wedding Planner', 'Event', '#831843', '#f9a8d4', 'Elegant wedding services website', ['Planning', 'Decor', 'Venues'], 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1100&q=80'],
+  ['Personal Brand', 'Creator', '#1e293b', '#f97316', 'Creator homepage with newsletter CTA', ['Story', 'Resources', 'Speaking'], 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=1100&q=80'],
+  ['Blog Magazine', 'Content', '#0f172a', '#eab308', 'Magazine-style blog homepage', ['Latest', 'Guides', 'Interviews'], 'https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1100&q=80'],
+].map(([name, category, secondary, primary, headline, cards, image]) => ({ name, category, secondary, primary, headline, cards, image }))
+
+function templateByName(name) {
+  return templateCatalog.find((template) => template.name === name)
+}
+
+function catalogTemplateNodes(templateName) {
+  const template = templateByName(templateName)
+  if (!template) return null
+  return genericTemplateNodes(template)
+}
+
+function themedHeader(template) {
+  return makeNode('header', { props: { name: `${template.name} Header` }, styles: { padding: '18px 32px', background: '#ffffff', borderBottom: '1px solid #e2e8f0' } }, [
+    makeNode('flex', { props: { name: 'Navigation' }, styles: { maxWidth: '1180px', margin: '0 auto', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '18px', flexWrap: 'wrap' } }, [
+      makeNode('heading', { props: { text: template.name.split(' ')[0], tag: 'h3', name: 'Logo' }, styles: { fontSize: '24px', margin: '0', color: template.secondary } }),
+      makeNode('paragraph', { props: { text: 'Home   Services   Work   Contact', name: 'Menu' }, styles: { fontSize: '15px', color: '#475569', margin: '0 auto', whiteSpace: 'nowrap' } }),
+      makeNode('button', { props: { text: 'Get Started', name: 'Header CTA' }, styles: { background: template.primary, borderRadius: '999px', padding: '11px 18px' } }),
+    ]),
+  ])
+}
+
+function themedHero(template) {
+  return makeNode('section', { props: { name: `${template.name} Hero` }, styles: { padding: '82px 32px', background: '#f8fafc' } }, [
+    makeNode('grid', { props: { name: 'Hero Structure' }, styles: { maxWidth: '1180px', margin: '0 auto', gap: '46px', alignItems: 'center' }, responsiveStyles: { desktop: { gridTemplateColumns: '1fr 1fr' }, tablet: { gridTemplateColumns: '1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+      makeNode('container', { props: { name: 'Hero Content' }, styles: { padding: '0', display: 'grid', gap: '18px' } }, [
+        makeNode('paragraph', { props: { text: template.category }, styles: { color: template.primary, fontSize: '14px', fontWeight: '800', textTransform: 'uppercase' } }),
+        makeNode('heading', { props: { text: template.headline, tag: 'h1' }, styles: { color: template.secondary, fontSize: '54px', lineHeight: '1.02' }, responsiveStyles: { tablet: { fontSize: '42px' }, mobile: { fontSize: '34px', textAlign: 'center' } } }),
+        makeNode('paragraph', { props: { text: 'A complete editable website structure with header, hero, sections, cards, contact, and footer. Drag blocks, change spacing, and customize every element.' }, styles: { color: '#475569', fontSize: '18px' } }),
+        makeNode('button', { props: { text: 'Start Editing' }, styles: { background: template.primary, borderRadius: '8px', padding: '15px 24px' } }),
+      ]),
+      makeNode('image', { props: { src: template.image, alt: template.name }, styles: { width: '100%', maxWidth: '540px', height: '370px', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 20px 45px rgba(15, 23, 42, .18)' } }),
+    ]),
+  ])
+}
+
+function genericTemplateNodes(template) {
+  return [
+    themedHeader(template),
+    themedHero(template),
+    cardsSection('Highlights', `${template.name} sections`, template.cards),
+    makeNode('section', { props: { name: 'Story' }, styles: { padding: '76px 32px', background: '#ffffff' } }, [
+      makeNode('grid', { props: { name: 'Story Layout' }, styles: { maxWidth: '1180px', margin: '0 auto', gap: '36px', alignItems: 'center' }, responsiveStyles: { desktop: { gridTemplateColumns: '0.95fr 1.05fr' }, tablet: { gridTemplateColumns: '1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+        makeNode('image', { props: { src: template.image, alt: `${template.name} detail` }, styles: { width: '100%', maxWidth: '520px', height: '320px', objectFit: 'cover', borderRadius: '8px' } }),
+        makeNode('container', { props: { name: 'Story Copy' }, styles: { padding: '0', display: 'grid', gap: '16px' } }, [
+          makeNode('heading', { props: { text: 'Built with clear editable structure' }, styles: { color: template.secondary, fontSize: '40px' } }),
+          makeNode('paragraph', { props: { text: 'Use this section for an about story, offer explanation, services detail, menu highlights, listings, or product benefits.' } }),
+          makeNode('button', { props: { text: 'Customize This Section' }, styles: { background: template.primary } }),
+        ]),
+      ]),
+    ]),
+    contactSection(),
+    makeNode('footer', { styles: { background: template.secondary, padding: '46px 32px', color: '#ffffff' } }, [
+      makeNode('grid', { props: { name: 'Footer Structure' }, styles: { maxWidth: '1180px', margin: '0 auto', gap: '28px' }, responsiveStyles: { desktop: { gridTemplateColumns: '2fr 1fr 1fr' }, tablet: { gridTemplateColumns: '1fr 1fr' }, mobile: { gridTemplateColumns: '1fr' } } }, [
+        makeNode('container', { props: { name: 'Footer Brand' }, styles: { padding: '0', display: 'grid', gap: '12px' } }, [
+          makeNode('heading', { props: { text: template.name, tag: 'h3' }, styles: { color: '#ffffff', fontSize: '24px' } }),
+          makeNode('paragraph', { props: { text: 'Edit this footer once, then sync it across pages when needed.' }, styles: { color: '#cbd5e1', fontSize: '15px' } }),
+        ]),
+        makeNode('paragraph', { props: { text: 'Home\nServices\nWork\nContact' }, styles: { color: '#cbd5e1', whiteSpace: 'pre-line' } }),
+        makeNode('paragraph', { props: { text: 'hello@example.com\n+1 555 0188\nOpen daily' }, styles: { color: '#cbd5e1', whiteSpace: 'pre-line' } }),
+      ]),
+    ]),
+  ]
+}
+
 function quickSection(kind) {
   const sections = {
     header: headerSection,
@@ -495,7 +592,7 @@ function hotelWebsite() {
   const pages = ['Home', 'Rooms', 'Dining', 'Events', 'Contact'].map((name) => makePage(name, hotelPageNodes(name)))
   return {
     id: uid('site'),
-    schemaVersion: 5,
+    schemaVersion: SCHEMA_VERSION,
     name: 'Azure Table & Stay',
     homePageId: pages[0].id,
     globalStyles: {
@@ -516,17 +613,14 @@ function makePage(name, nodes = []) {
 function defaultWebsite() {
   return {
     id: uid('site'),
-    schemaVersion: 5,
+    schemaVersion: SCHEMA_VERSION,
     name: 'My Website',
     homePageId: null,
     globalStyles: baseTheme,
     reusableComponents: [],
     mediaLibrary: [],
     pages: [
-      makePage('Home', [headerSection(), heroSection(), cardsSection(), ctaSection(), footerSection()]),
-      makePage('About', [headerSection(), heroSection('A small team helping brands move faster'), cardsSection('Team', 'People behind the work', ['Strategy Lead', 'Designer', 'Builder']), ctaSection(), footerSection()]),
-      makePage('Services', [headerSection(), heroSection('Services for modern digital teams'), cardsSection('Services', 'What we can build together', ['Web Design', 'Automation', 'SEO']), ctaSection(), footerSection()]),
-      makePage('Contact', [headerSection(), heroSection('Let us start a useful conversation'), contactSection(), footerSection()]),
+      makePage('Home', []),
     ],
     preferences: { mode: 'simple' },
   }
@@ -712,6 +806,22 @@ function editorReducer(state, action) {
         website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: insertNode(p.nodes, parentId, node, action.index) })),
       }
     }
+    case 'ADD_BASIC_STRUCTURE': {
+      const nodes = [
+        headerSection(),
+        heroSection('Start building this website'),
+        makeNode('section', { props: { name: 'Blank Content Section' }, styles: { padding: '72px 32px', background: '#ffffff', minHeight: '260px' } }, [
+          makeNode('container', { props: { name: 'Drop Area' }, styles: { maxWidth: '1120px', margin: '0 auto', padding: '32px', minHeight: '180px', border: '1px dashed #bfdbfe' } }),
+        ]),
+        footerSection(),
+      ]
+      return {
+        ...state,
+        selectedId: nodes[2].id,
+        notice: 'Basic website structure added',
+        website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes })),
+      }
+    }
     case 'ADD_BLANK_AFTER': {
       const location = findNodeLocation(page.nodes, action.id)
       if (!location) return state
@@ -821,6 +931,8 @@ function updateAllOfType(nodes, type, styles) {
 }
 
 function templateNodes(template) {
+  const catalogNodes = catalogTemplateNodes(template)
+  if (catalogNodes) return catalogNodes
   if (template === 'Restaurant Hotel') return hotelPageNodes('Home')
   if (template === 'Restaurant') return [headerSection(), heroSection('Fresh flavors, memorable evenings'), cardsSection('Menu Highlights', 'Popular dishes', ['Seasonal Plates', 'Private Dining', 'Catering']), contactSection(), footerSection()]
   if (template === 'Portfolio') return [headerSection(), heroSection('Designer portfolio for standout work'), cardsSection('Selected Work', 'Projects with purpose', ['Brand System', 'Web Experience', 'Product UI']), ctaSection(), footerSection()]
@@ -944,7 +1056,7 @@ const reduce = historyWrap(editorReducer)
 function initialState() {
   const loaded = localStorage.getItem(STORAGE_KEY)
   const parsed = loaded ? JSON.parse(loaded) : null
-  const website = parsed?.schemaVersion >= 5 ? parsed : defaultWebsite()
+  const website = parsed?.schemaVersion >= SCHEMA_VERSION ? parsed : defaultWebsite()
   if (!website.homePageId) website.homePageId = website.pages[0].id
   if (!website.mediaLibrary) website.mediaLibrary = []
   if (!website.reusableComponents) website.reusableComponents = []
@@ -1161,7 +1273,7 @@ function PagesPanel({ state, dispatch }) {
             </Labeled>
             <Labeled label="Starting template">
               <select className="field w-full rounded-md border border-slate-200 px-3 py-2 text-sm" value={template} onChange={(event) => setTemplate(event.target.value)}>
-                {['Blank', 'Restaurant Hotel', 'SaaS', 'Agency', 'Restaurant', 'Portfolio', 'Business', 'Rooms', 'Dining', 'Events', 'Contact'].map((item) => <option key={item}>{item}</option>)}
+                {['Blank', ...templateCatalog.map((item) => item.name), 'Rooms', 'Dining', 'Events', 'Contact'].map((item) => <option key={item}>{item}</option>)}
               </select>
             </Labeled>
             <div className="mt-4 grid grid-cols-2 gap-2">
@@ -1238,11 +1350,47 @@ function QuickSections() {
 }
 
 function TemplatesPanel({ dispatch }) {
-  const templates = ['Restaurant Hotel', 'SaaS', 'Agency', 'Restaurant', 'Portfolio', 'Business', 'Blog', 'E-commerce', 'Landing Page']
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('All')
+  const categories = ['All', ...new Set(templateCatalog.map((template) => template.category))]
+  const templates = templateCatalog.filter((template) => {
+    const matchesCategory = category === 'All' || template.category === category
+    const matchesQuery = `${template.name} ${template.category} ${template.headline}`.toLowerCase().includes(query.toLowerCase())
+    return matchesCategory && matchesQuery
+  })
   return (
     <Panel title="Templates">
-      <button className="mb-3 w-full rounded-md bg-amber-700 p-3 text-left text-sm font-extrabold text-white hover:bg-amber-800" onClick={() => dispatch({ type: 'LOAD_WEBSITE_TEMPLATE', template: 'Restaurant Hotel' })}>Build Full Restaurant/Hotel Website</button>
-      <div className="space-y-2">{templates.map((template) => <button key={template} className="w-full rounded-md border border-slate-200 p-3 text-left text-sm font-semibold hover:border-blue-400 hover:bg-blue-50" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template })}>{template}</button>)}</div>
+      <div className="mb-3 rounded-md border border-blue-200 bg-blue-50 p-3">
+        <div className="text-sm font-extrabold text-blue-950">30 editable website templates</div>
+        <div className="mt-1 text-xs font-semibold text-blue-700">Apply any template to the canvas, then drag, edit, and save it.</div>
+      </div>
+      <div className="relative mb-3">
+        <Search size={15} className="absolute left-3 top-2.5 text-slate-400" />
+        <input className="w-full rounded-md border border-slate-200 py-2 pl-9 pr-3 text-sm" placeholder="Search templates" value={query} onChange={(event) => setQuery(event.target.value)} />
+      </div>
+      <div className="editor-scrollbar mb-4 flex gap-2 overflow-x-auto pb-1">
+        {categories.map((item) => (
+          <button key={item} className={clsx('shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold', category === item ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 bg-white text-slate-600')} onClick={() => setCategory(item)}>{item}</button>
+        ))}
+      </div>
+      <div className="space-y-3">
+        {templates.map((template) => (
+          <div key={template.name} className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+            <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(90deg, ${template.secondary}dd, transparent), url(${template.image})` }}>
+              <div className="flex h-full items-end p-3">
+                <div>
+                  <span className="rounded bg-white/90 px-2 py-1 text-[10px] font-extrabold uppercase text-slate-700">{template.category}</span>
+                  <div className="mt-2 text-sm font-extrabold text-white drop-shadow">{template.name}</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-3">
+              <div className="text-xs text-slate-600">{template.headline}</div>
+              <button className="mt-3 w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-extrabold text-white hover:bg-blue-700" onClick={() => dispatch({ type: 'LOAD_TEMPLATE', template: template.name })}>Apply Template</button>
+            </div>
+          </div>
+        ))}
+      </div>
     </Panel>
   )
 }
@@ -1373,43 +1521,45 @@ function Canvas({ state, page, dispatch, zoom }) {
   return (
     <div
       ref={viewportRef}
-      className={clsx('editor-scrollbar h-[calc(100vh-64px)] overflow-auto bg-white', panning && 'cursor-grabbing')}
+      className={clsx('editor-scrollbar h-[calc(100vh-64px)] overflow-auto bg-slate-100', panning && 'cursor-grabbing')}
       onMouseDown={startPan}
       onMouseMove={movePan}
       onMouseUp={() => setPanning(null)}
       onMouseLeave={() => setPanning(null)}
     >
-      <div className="transition-all" style={{ width: scaledWidth, height: pageHeight * scale }}>
-        <div
-          className="origin-top-left overflow-visible"
-          style={{ width: baseWidth, transform: `scale(${scale})`, transformOrigin: 'top left' }}
-        >
+      <div className="flex min-w-full justify-center p-8 transition-all" style={{ width: Math.max(scaledWidth + 64, viewportWidth), minHeight: pageHeight * scale + 64 }}>
+        <div style={{ width: scaledWidth, height: pageHeight * scale }}>
           <div
-            ref={pageRef}
-            className="min-h-[650px] overflow-hidden bg-white shadow-editor"
-            style={{
-              '--theme-primary': state.website.globalStyles.colors.primary,
-              '--theme-secondary': state.website.globalStyles.colors.secondary,
-              '--theme-text': state.website.globalStyles.colors.text,
-              '--theme-background': state.website.globalStyles.colors.background,
-            }}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => handleDrop(e, 'root', state, dispatch)}
+            className="origin-top-left overflow-visible"
+            style={{ width: baseWidth, transform: `scale(${scale})`, transformOrigin: 'top left' }}
           >
-            {page.settings?.importedCss && <style>{page.settings.importedCss}</style>}
-            {page.nodes.length === 0 ? (
-              <EmptyDrop dispatch={dispatch} state={state} />
-            ) : (
-              <>
-                <DropZone parentId="root" index={0} state={state} dispatch={dispatch} />
-                {page.nodes.map((node, index) => (
-                  <div key={node.id}>
-                    <RenderNode node={node} state={state} dispatch={dispatch} parentId="root" />
-                    <DropZone parentId="root" index={index + 1} state={state} dispatch={dispatch} />
-                  </div>
-                ))}
-              </>
-            )}
+            <div
+              ref={pageRef}
+              className="min-h-[720px] overflow-hidden bg-white shadow-editor"
+              style={{
+                '--theme-primary': state.website.globalStyles.colors.primary,
+                '--theme-secondary': state.website.globalStyles.colors.secondary,
+                '--theme-text': state.website.globalStyles.colors.text,
+                '--theme-background': state.website.globalStyles.colors.background,
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDrop(e, 'root', state, dispatch)}
+            >
+              {page.settings?.importedCss && <style>{page.settings.importedCss}</style>}
+              {page.nodes.length === 0 ? (
+                <EmptyDrop dispatch={dispatch} state={state} />
+              ) : (
+                <>
+                  <DropZone parentId="root" index={0} state={state} dispatch={dispatch} />
+                  {page.nodes.map((node, index) => (
+                    <div key={node.id}>
+                      <RenderNode node={node} state={state} dispatch={dispatch} parentId="root" />
+                      <DropZone parentId="root" index={index + 1} state={state} dispatch={dispatch} />
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1418,19 +1568,51 @@ function Canvas({ state, page, dispatch, zoom }) {
 }
 
 function EmptyDrop({ dispatch, state }) {
+  const structure = [
+    ['Header', 'Navigation, logo, menu', 'header'],
+    ['Hero', 'Headline, CTA, image', 'hero'],
+    ['Content Section', 'Grid, flex, cards, forms', 'features'],
+    ['Footer', 'Links and contact details', 'footer'],
+  ]
   return (
-    <div className="m-8 flex min-h-[420px] items-center justify-center rounded-lg border-2 border-dashed border-blue-200 bg-blue-50 p-8 text-center" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'root', state, dispatch)}>
-      <div>
-        <div className="text-lg font-extrabold text-blue-950">Start your page</div>
-        <div className="mt-2 text-sm font-semibold text-blue-700">Drag a section here or add a ready block.</div>
-        <div className="mt-5 grid grid-cols-2 gap-2">
+    <div className="p-10" onDragOver={(e) => e.preventDefault()} onDrop={(e) => handleDrop(e, 'root', state, dispatch)}>
+      <div className="mx-auto max-w-4xl rounded-lg border border-dashed border-blue-300 bg-blue-50/60 p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-lg font-extrabold text-blue-950">Blank website structure</div>
+            <div className="mt-1 text-sm font-semibold text-blue-700">Drag widgets into the page or start with a structured section.</div>
+          </div>
+          <button
+            className="rounded-md bg-blue-600 px-4 py-3 text-sm font-extrabold text-white hover:bg-blue-700"
+            onClick={() => dispatch({ type: 'ADD_BASIC_STRUCTURE' })}
+          >
+            Create Basic Structure
+          </button>
+        </div>
+        <div className="mt-6 grid gap-3">
+          {structure.map(([label, help, kind]) => (
+            <div key={kind} className="rounded-md border border-blue-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm font-extrabold text-slate-950">{label}</div>
+                  <div className="text-xs font-semibold text-slate-500">{help}</div>
+                </div>
+                <div className="flex gap-2">
+                  <DraggableTile label={`Drag ${label}`} icon={LayoutTemplate} payload={{ type: 'quick', kind }} />
+                  <button className="rounded-md border border-blue-200 px-3 py-2 text-xs font-extrabold text-blue-800 hover:bg-blue-50" onClick={() => dispatch({ type: 'ADD_NODE', node: quickSection(kind), parentId: 'root' })}>Add</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 grid grid-cols-2 gap-2 md:grid-cols-4">
           {[
-            ['Hero', 'hero'],
-            ['Features', 'features'],
+            ['Grid', 'grid'],
+            ['Flex', 'flex'],
+            ['Cards', 'features'],
             ['Contact', 'contact'],
-            ['Footer', 'footer'],
           ].map(([label, kind]) => (
-            <button key={kind} className="rounded-md bg-white px-4 py-3 text-sm font-bold text-blue-800 shadow-sm hover:bg-blue-100" onClick={() => dispatch({ type: 'ADD_NODE', node: quickSection(kind), parentId: 'root' })}>{label}</button>
+            <button key={kind} className="rounded-md bg-white px-4 py-3 text-sm font-bold text-blue-800 shadow-sm hover:bg-blue-100" onClick={() => dispatch({ type: kind === 'grid' || kind === 'flex' ? 'ADD_NODE' : 'ADD_NODE', node: kind === 'grid' || kind === 'flex' ? makeNode(kind) : quickSection(kind), parentId: 'root' })}>{label}</button>
           ))}
         </div>
       </div>
