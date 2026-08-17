@@ -631,10 +631,10 @@ function editorReducer(state, action) {
       const pageName = action.name || 'New Page'
       const nodes = action.template === 'Hotel' ? hotelPageNodes(pageName) : [headerSection(), heroSection('Start building this page'), footerSection()]
       const nextPage = makePage(pageName, nodes)
-      return { ...state, currentPageId: nextPage.id, selectedId: null, website: { ...state.website, pages: [...state.website.pages, nextPage] } }
+      return { ...state, currentPageId: nextPage.id, selectedId: null, website: { ...state.website, pages: [...state.website.pages, nextPage], preferences: { ...state.website.preferences, currentPageId: nextPage.id } } }
     }
     case 'OPEN_PAGE':
-      return { ...state, currentPageId: action.id, selectedId: null }
+      return { ...state, currentPageId: action.id, selectedId: null, website: { ...state.website, preferences: { ...state.website.preferences, currentPageId: action.id } } }
     case 'RENAME_PAGE':
       return { ...state, website: { ...state.website, pages: state.website.pages.map((p) => (p.id === action.id ? { ...p, name: action.name, slug: action.name.toLowerCase().replace(/\s+/g, '-') } : p)) } }
     case 'DUPLICATE_PAGE': {
@@ -735,7 +735,7 @@ function editorReducer(state, action) {
       return { ...state, website: applyToPage(state.website, page.id, (p) => ({ ...p, nodes: templateNodes(action.template) })), selectedId: null }
     case 'LOAD_WEBSITE_TEMPLATE': {
       const website = action.template === 'Restaurant Hotel' ? hotelWebsite() : state.website
-      return { ...state, website, currentPageId: website.pages[0].id, selectedId: null }
+      return { ...state, website: { ...website, preferences: { ...website.preferences, currentPageId: website.pages[0].id } }, currentPageId: website.pages[0].id, selectedId: null }
     }
     case 'IMPORT_NODES':
       return {
@@ -862,9 +862,10 @@ function initialState() {
   const parsed = loaded ? JSON.parse(loaded) : null
   const website = parsed?.schemaVersion >= 5 ? parsed : defaultWebsite()
   if (!website.homePageId) website.homePageId = website.pages[0].id
+  const currentPageId = website.preferences?.currentPageId && website.pages.some((page) => page.id === website.preferences.currentPageId) ? website.preferences.currentPageId : website.pages[0].id
   return {
     website,
-    currentPageId: website.pages[0].id,
+    currentPageId,
     selectedId: null,
     device: 'desktop',
     preview: false,
@@ -1387,7 +1388,7 @@ function ElementShell({ node, selected, dispatch, children }) {
   ]
   return (
     <div className="group relative">
-      {selected && widgetRegistry[node.type].container && (
+      {selected && (
         <div className="absolute right-3 top-3 z-20 flex items-center gap-1 rounded-md border border-blue-200 bg-white/95 px-2 py-1 text-xs font-bold text-blue-700 shadow">
           <span className="max-w-24 truncate">{widgetRegistry[node.type].name}</span>
           <button className="rounded p-1 hover:bg-blue-50" title="Duplicate" onClick={() => dispatch({ type: 'DUPLICATE_NODE', id: node.id })}><Copy size={13} /></button>
@@ -1397,7 +1398,7 @@ function ElementShell({ node, selected, dispatch, children }) {
         </div>
       )}
       {children}
-      {selected && widgetRegistry[node.type].container && (
+      {selected && (
         <div className="absolute bottom-0 left-1/2 z-30 -translate-x-1/2 translate-y-1/2" onClick={(event) => event.stopPropagation()}>
           <button
             className="rounded-full border border-blue-200 bg-blue-600 px-4 py-2 text-xs font-extrabold text-white shadow hover:bg-blue-700"
